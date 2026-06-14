@@ -29,23 +29,21 @@ curl http://localhost:3000/.well-known/oauth-protected-resource
 
 ## Auth
 
-Hosted mode should require Auth0/OIDC JWTs:
+Local development defaults to no auth. For hosted personal use, enable a static bearer token:
 
 ```bash
 AUTH_REQUIRED=true
-AUTH0_ISSUER_BASE_URL=https://YOUR_TENANT.au.auth0.com/
-AUTH0_AUDIENCE=https://your-public-botany-mcp-origin
-AUTH_REQUIRED_SCOPES=plants:read
+BOTANY_MCP_TOKEN=generate-a-long-random-token
 PUBLIC_BASE_URL=https://your-public-botany-mcp-origin
 ```
 
 When auth is enabled, every `/mcp` request must include:
 
 ```text
-Authorization: Bearer <access-token>
+Authorization: Bearer <BOTANY_MCP_TOKEN>
 ```
 
-The server verifies issuer, audience, expiry, and required scopes using the provider JWKS.
+The token protects access to the MCP endpoint. Keep it secret, and rotate it if it is exposed.
 
 ## Useful Scripts
 

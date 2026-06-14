@@ -22,12 +22,7 @@ export const config = {
   mcpEndpointPath: process.env.MCP_ENDPOINT_PATH ?? "/mcp",
   publicBaseUrl: trimTrailingSlash(process.env.PUBLIC_BASE_URL ?? `http://localhost:${port}`),
   authRequired: toBool(process.env.AUTH_REQUIRED, false),
-  auth0IssuerBaseUrl: process.env.AUTH0_ISSUER_BASE_URL,
-  auth0Audience: process.env.AUTH0_AUDIENCE,
-  authRequiredScopes: (process.env.AUTH_REQUIRED_SCOPES ?? "plants:read")
-    .split(/[,\s]+/)
-    .map((scope) => scope.trim())
-    .filter(Boolean),
+  authToken: process.env.BOTANY_MCP_TOKEN,
   allowedOrigins: (process.env.ALLOWED_ORIGINS ?? "")
     .split(",")
     .map((origin) => origin.trim())
