@@ -1,0 +1,31 @@
+{
+  "data": {
+    "taxonConceptAutocomplete": [
+      {
+        "id": "f6c2d8e7-9d03-4677-b4c8-1caee39964c7",
+        "taxonRank": "SPECIES",
+        "taxonomicStatus": "ACCEPTED",
+        "occurrenceStatus": "PRESENT",
+        "establishmentMeans": null,
+        "degreeOfEstablishment": null,
+        "endemic": false,
+        "taxonName": {
+          "id": "name-1",
+          "fullName": "Eucalyptus pauciflora",
+          "authorship": "Sieber ex Spreng.",
+          "fullNameWithAuthorship": "Eucalyptus pauciflora Sieber ex Spreng."
+        },
+        "preferredVernacularName": {
+          "id": "vernacular-1",
+          "name": "Snow gum"
+        },
+        "vernacularNames": [
+          {
+            "id": "vernacular-1",
+            "name": "Snow gum"
+          }
+        ]
+      }
+    ]
+  }
+}
