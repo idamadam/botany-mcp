@@ -15,14 +15,20 @@ const toInt = (value: string | undefined, fallback: number) => {
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 const port = toInt(process.env.PORT, 3000);
+const nodeEnv = process.env.NODE_ENV ?? "development";
+const defaultAuthRequired = nodeEnv === "production";
 
 export const config = {
+  nodeEnv,
   port,
   host: process.env.HOST ?? "127.0.0.1",
   mcpEndpointPath: process.env.MCP_ENDPOINT_PATH ?? "/mcp",
   publicBaseUrl: trimTrailingSlash(process.env.PUBLIC_BASE_URL ?? `http://localhost:${port}`),
-  authRequired: toBool(process.env.AUTH_REQUIRED, false),
+  authRequired: toBool(process.env.AUTH_REQUIRED, defaultAuthRequired),
   authToken: process.env.BOTANY_MCP_TOKEN,
+  oauthClientId: process.env.OAUTH_CLIENT_ID,
+  oauthClientSecret: process.env.OAUTH_CLIENT_SECRET,
+  oauthAccessTokenTtlSeconds: toInt(process.env.OAUTH_ACCESS_TOKEN_TTL_SECONDS, 3600),
   allowedOrigins: (process.env.ALLOWED_ORIGINS ?? "")
     .split(",")
     .map((origin) => origin.trim())

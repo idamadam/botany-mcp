@@ -5,7 +5,14 @@ import { randomUUID } from "node:crypto";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { config } from "./config.js";
-import { authChallenge, protectedResourceMetadata, requireAuth } from "./auth.js";
+import {
+  authChallenge,
+  authorizationServerMetadata,
+  authorizeOAuth,
+  issueOAuthToken,
+  protectedResourceMetadata,
+  requireAuth
+} from "./auth.js";
 import { logger } from "./logger.js";
 import { createMcpServer } from "./mcp.js";
 import { validateOrigin } from "./origin.js";
@@ -20,6 +27,7 @@ export const createHttpApp = (provider: BotanyProvider) => {
   app.use(helmet());
   app.use(cors({ origin: true, credentials: false }));
   app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ extended: false }));
 
   app.get("/healthz", (_req, res) => {
     res.json({
@@ -32,6 +40,17 @@ export const createHttpApp = (provider: BotanyProvider) => {
   app.get("/.well-known/oauth-protected-resource", (_req, res) => {
     res.json(protectedResourceMetadata());
   });
+
+  app.get("/.well-known/oauth-authorization-server", (_req, res) => {
+    res.json(authorizationServerMetadata());
+  });
+
+  app.get("/.well-known/openid-configuration", (_req, res) => {
+    res.json(authorizationServerMetadata());
+  });
+
+  app.get("/oauth/authorize", authorizeOAuth);
+  app.post("/oauth/token", issueOAuthToken);
 
   app.use(config.mcpEndpointPath, validateOrigin);
   app.use(config.mcpEndpointPath, (req, res, next) => {

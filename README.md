@@ -19,6 +19,7 @@ npm run dev
 ```
 
 The local server defaults to no auth at `http://localhost:3000/mcp`.
+When `NODE_ENV=production`, auth is required by default unless `AUTH_REQUIRED=false` is set explicitly.
 
 Set `HOST=0.0.0.0` on hosted platforms that require binding on all interfaces.
 
@@ -32,7 +33,7 @@ curl http://localhost:3000/.well-known/oauth-protected-resource
 Local development defaults to no auth. For hosted personal use, enable a static bearer token:
 
 ```bash
-AUTH_REQUIRED=true
+NODE_ENV=production
 BOTANY_MCP_TOKEN=generate-a-long-random-token
 PUBLIC_BASE_URL=https://your-public-botany-mcp-origin
 ```
@@ -44,6 +45,17 @@ Authorization: Bearer <BOTANY_MCP_TOKEN>
 ```
 
 The token protects access to the MCP endpoint. Keep it secret, and rotate it if it is exposed.
+
+For clients that require OAuth client credentials, such as Claude custom connectors, configure a built-in OAuth client:
+
+```bash
+NODE_ENV=production
+OAUTH_CLIENT_ID=botany-mcp
+OAUTH_CLIENT_SECRET=generate-another-long-random-secret
+PUBLIC_BASE_URL=https://your-public-botany-mcp-origin
+```
+
+Then enter the same `OAUTH_CLIENT_ID` and `OAUTH_CLIENT_SECRET` in the client. The server exposes OAuth discovery at `/.well-known/oauth-authorization-server` and issues short-lived bearer access tokens from `/oauth/token`.
 
 ## Useful Scripts
 
