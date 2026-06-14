@@ -37,4 +37,22 @@ describe("config", () => {
 
     expect(config.authRequired).toBe(false);
   });
+
+  it("uses RAILWAY_PUBLIC_DOMAIN for the public base URL when no explicit URL is set", async () => {
+    vi.stubEnv("PUBLIC_BASE_URL", undefined);
+    vi.stubEnv("RAILWAY_PUBLIC_DOMAIN", "botany-production.up.railway.app");
+
+    const config = await loadConfig();
+
+    expect(config.publicBaseUrl).toBe("https://botany-production.up.railway.app");
+  });
+
+  it("keeps PUBLIC_BASE_URL as the public base URL override", async () => {
+    vi.stubEnv("PUBLIC_BASE_URL", "https://botany.example.com/");
+    vi.stubEnv("RAILWAY_PUBLIC_DOMAIN", "botany-production.up.railway.app");
+
+    const config = await loadConfig();
+
+    expect(config.publicBaseUrl).toBe("https://botany.example.com");
+  });
 });

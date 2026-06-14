@@ -14,16 +14,30 @@ const toInt = (value: string | undefined, fallback: number) => {
 };
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
+const withHttps = (value: string) => /^https?:\/\//i.test(value) ? value : `https://${value}`;
 const port = toInt(process.env.PORT, 3000);
 const nodeEnv = process.env.NODE_ENV ?? "development";
 const defaultAuthRequired = nodeEnv === "production";
+const publicBaseUrl = () => {
+  const explicitBaseUrl = process.env.PUBLIC_BASE_URL?.trim();
+  if (explicitBaseUrl) {
+    return explicitBaseUrl;
+  }
+
+  const railwayPublicDomain = process.env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  if (railwayPublicDomain) {
+    return withHttps(railwayPublicDomain);
+  }
+
+  return `http://localhost:${port}`;
+};
 
 export const config = {
   nodeEnv,
   port,
   host: process.env.HOST ?? "127.0.0.1",
   mcpEndpointPath: process.env.MCP_ENDPOINT_PATH ?? "/mcp",
-  publicBaseUrl: trimTrailingSlash(process.env.PUBLIC_BASE_URL ?? `http://localhost:${port}`),
+  publicBaseUrl: trimTrailingSlash(publicBaseUrl()),
   authRequired: toBool(process.env.AUTH_REQUIRED, defaultAuthRequired),
   authToken: process.env.BOTANY_MCP_TOKEN,
   oauthClientId: process.env.OAUTH_CLIENT_ID,

@@ -22,6 +22,7 @@ The local server defaults to no auth at `http://localhost:3000/mcp`.
 When `NODE_ENV=production`, auth is required by default unless `AUTH_REQUIRED=false` is set explicitly.
 
 Set `HOST=0.0.0.0` on hosted platforms that require binding on all interfaces.
+On Railway, `PUBLIC_BASE_URL` can be omitted when `RAILWAY_PUBLIC_DOMAIN` is present; the server will derive `https://<RAILWAY_PUBLIC_DOMAIN>`.
 
 ```bash
 curl http://localhost:3000/healthz
@@ -35,7 +36,7 @@ Local development defaults to no auth. For hosted personal use, enable a static 
 ```bash
 NODE_ENV=production
 BOTANY_MCP_TOKEN=generate-a-long-random-token
-PUBLIC_BASE_URL=https://your-public-botany-mcp-origin
+PUBLIC_BASE_URL=https://your-public-botany-mcp-origin # optional on Railway
 ```
 
 When auth is enabled, every `/mcp` request must include:
@@ -52,7 +53,7 @@ For clients that require OAuth client credentials, such as Claude custom connect
 NODE_ENV=production
 OAUTH_CLIENT_ID=botany-mcp
 OAUTH_CLIENT_SECRET=generate-another-long-random-secret
-PUBLIC_BASE_URL=https://your-public-botany-mcp-origin
+PUBLIC_BASE_URL=https://your-public-botany-mcp-origin # optional on Railway
 ```
 
 Then enter the same `OAUTH_CLIENT_ID` and `OAUTH_CLIENT_SECRET` in the client. The server exposes OAuth discovery at `/.well-known/oauth-authorization-server` and issues short-lived bearer access tokens from `/oauth/token`.
