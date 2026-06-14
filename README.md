@@ -10,6 +10,7 @@ Remote MCP server for authoritative plant information, starting with the public 
 - `lookup_botanical_terms` - look up botanical glossary terms from VicFlora.
 
 The server is read-only. Tool responses include provider/source metadata and retrieval timestamps so model answers can stay grounded.
+Plant profile image URLs are served through this MCP's `/images/vicflora` proxy so browser clients can render VicFlora CDN images without CORS failures. Original CDN URLs are retained as `thumbnailSourceUrl` and `previewSourceUrl`.
 
 ## Quick Start
 
@@ -23,6 +24,7 @@ When `NODE_ENV=production`, auth is required by default unless `AUTH_REQUIRED=fa
 
 Set `HOST=0.0.0.0` on hosted platforms that require binding on all interfaces.
 On Railway, `PUBLIC_BASE_URL` can be omitted when `RAILWAY_PUBLIC_DOMAIN` is present; the server will derive `https://<RAILWAY_PUBLIC_DOMAIN>`.
+The image proxy defaults to VicFlora hosts only; override `IMAGE_PROXY_ALLOWED_HOSTS` with a comma-separated host list if VicFlora changes image CDNs.
 
 ```bash
 curl http://localhost:3000/healthz

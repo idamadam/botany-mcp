@@ -62,7 +62,9 @@ export type PlantProfile = {
     creator?: string;
     license?: string;
     thumbnailUrl?: string;
+    thumbnailSourceUrl?: string;
     previewUrl?: string;
+    previewSourceUrl?: string;
   }>;
   references: ProfileReference[];
   metadata: SourceMetadata;

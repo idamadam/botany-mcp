@@ -37,6 +37,10 @@ export const createHttpApp = (provider: BotanyProvider) => {
     });
   });
 
+  app.get(config.imageProxyPath, async (req, res) => {
+    await proxyImage(req, res);
+  });
+
   app.get("/.well-known/oauth-protected-resource", (_req, res) => {
     res.json(protectedResourceMetadata());
   });
@@ -147,4 +151,75 @@ export const createHttpApp = (provider: BotanyProvider) => {
   };
 
   return { app, closeTransports };
+};
+
+const firstQueryString = (value: unknown) => Array.isArray(value) ? value[0] : value;
+
+const allowedImageHost = (hostname: string) =>
+  config.imageProxyAllowedHosts.includes(hostname.toLowerCase());
+
+export const proxyImage = async (req: Request, res: Response) => {
+  const rawUrl = firstQueryString(req.query.url);
+  if (typeof rawUrl !== "string" || rawUrl.length === 0) {
+    res.status(400).json({ error: "missing_image_url" });
+    return;
+  }
+
+  let imageUrl: URL;
+  try {
+    imageUrl = new URL(rawUrl);
+  } catch {
+    res.status(400).json({ error: "invalid_image_url" });
+    return;
+  }
+
+  if (imageUrl.protocol !== "https:" || !allowedImageHost(imageUrl.hostname)) {
+    res.status(403).json({ error: "image_host_not_allowed" });
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), config.vicfloraTimeoutMs);
+
+  try {
+    const upstream = await fetch(imageUrl, {
+      headers: {
+        "user-agent": "botany-mcp/0.1"
+      },
+      signal: controller.signal
+    });
+
+    if (!upstream.ok) {
+      res.status(502).json({ error: "image_fetch_failed", status: upstream.status });
+      return;
+    }
+
+    const contentType = upstream.headers.get("content-type") ?? "application/octet-stream";
+    if (!contentType.toLowerCase().startsWith("image/")) {
+      res.status(415).json({ error: "unsupported_image_content_type" });
+      return;
+    }
+
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.setHeader("Content-Type", contentType);
+
+    const contentLength = upstream.headers.get("content-length");
+    if (contentLength) {
+      res.setHeader("Content-Length", contentLength);
+    }
+
+    res.send(Buffer.from(await upstream.arrayBuffer()));
+  } catch (error) {
+    if (!res.headersSent) {
+      res.status(502).json({
+        error: error instanceof Error && error.name === "AbortError"
+          ? "image_fetch_timeout"
+          : "image_fetch_failed"
+      });
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
 };

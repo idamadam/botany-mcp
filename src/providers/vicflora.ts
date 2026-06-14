@@ -353,7 +353,7 @@ export class VicFloraProvider implements BotanyProvider {
         authorship: name.authorship
       })),
       phenology: data.taxonConceptPhenology ?? [],
-      images: data.taxonConceptImages?.data ?? [],
+      images: (data.taxonConceptImages?.data ?? []).map((image) => this.proxyImage(image)),
       references: (data.taxonConceptProfiles ?? [])
         .map((profile) => profile.source)
         .filter((source): source is ProfileReference => Boolean(source)),
@@ -615,6 +615,29 @@ export class VicFloraProvider implements BotanyProvider {
 
   private taxonUrl(id: string) {
     return `https://vicflora.rbg.vic.gov.au/flora/taxon/${id}`;
+  }
+
+  private proxyImage(image: PlantProfile["images"][number]): PlantProfile["images"][number] {
+    const thumbnailUrl = this.imageProxyUrl(image.thumbnailUrl);
+    const previewUrl = this.imageProxyUrl(image.previewUrl);
+
+    return {
+      ...image,
+      thumbnailUrl,
+      thumbnailSourceUrl: image.thumbnailUrl,
+      previewUrl,
+      previewSourceUrl: image.previewUrl
+    };
+  }
+
+  private imageProxyUrl(url: string | undefined) {
+    if (!url) {
+      return undefined;
+    }
+
+    const proxyUrl = new URL(config.imageProxyPath, config.publicBaseUrl);
+    proxyUrl.searchParams.set("url", url);
+    return proxyUrl.toString();
   }
 
   private async graphql<T>(

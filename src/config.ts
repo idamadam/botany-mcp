@@ -37,12 +37,20 @@ export const config = {
   port,
   host: process.env.HOST ?? "127.0.0.1",
   mcpEndpointPath: process.env.MCP_ENDPOINT_PATH ?? "/mcp",
+  imageProxyPath: process.env.IMAGE_PROXY_PATH ?? "/images/vicflora",
   publicBaseUrl: trimTrailingSlash(publicBaseUrl()),
   authRequired: toBool(process.env.AUTH_REQUIRED, defaultAuthRequired),
   authToken: process.env.BOTANY_MCP_TOKEN,
   oauthClientId: process.env.OAUTH_CLIENT_ID,
   oauthClientSecret: process.env.OAUTH_CLIENT_SECRET,
   oauthAccessTokenTtlSeconds: toInt(process.env.OAUTH_ACCESS_TOKEN_TTL_SECONDS, 3600),
+  imageProxyAllowedHosts: (
+    process.env.IMAGE_PROXY_ALLOWED_HOSTS ??
+    "vicflora-cdn.rbg.vic.gov.au,vicflora.rbg.vic.gov.au"
+  )
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean),
   allowedOrigins: (process.env.ALLOWED_ORIGINS ?? "")
     .split(",")
     .map((origin) => origin.trim())

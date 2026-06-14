@@ -124,4 +124,53 @@ describe("VicFloraProvider", () => {
     const provider = new VicFloraProvider();
     await expect(provider.searchTaxa("Eucalyptus", 5)).rejects.toThrow("VicFlora returned HTTP 503");
   });
+
+  it("rewrites profile image URLs to the local image proxy", async () => {
+    global.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          data: {
+            taxonConcept: {
+              id: "f6c2d8e7-9d03-4677-b4c8-1caee39964c7",
+              taxonName: {
+                fullName: "Eucalyptus pauciflora",
+                fullNameWithAuthorship: "Eucalyptus pauciflora Sieber ex Spreng."
+              }
+            },
+            taxonConceptProfiles: [],
+            taxonConceptPhenology: [],
+            taxonConceptImages: {
+              data: [
+                {
+                  id: "9129",
+                  thumbnailUrl: "https://vicflora-cdn.rbg.vic.gov.au/assets/canto/thumb/example.jpg",
+                  previewUrl: "https://vicflora-cdn.rbg.vic.gov.au/assets/canto/preview/example.jpg"
+                }
+              ]
+            }
+          }
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        }
+      )
+    );
+
+    const provider = new VicFloraProvider();
+    const result = await provider.getTaxonProfile({
+      taxonConceptId: "f6c2d8e7-9d03-4677-b4c8-1caee39964c7"
+    });
+
+    expect(result.images[0]).toMatchObject({
+      thumbnailSourceUrl: "https://vicflora-cdn.rbg.vic.gov.au/assets/canto/thumb/example.jpg",
+      previewSourceUrl: "https://vicflora-cdn.rbg.vic.gov.au/assets/canto/preview/example.jpg"
+    });
+    expect(result.images[0].thumbnailUrl).toBe(
+      "http://localhost:3000/images/vicflora?url=https%3A%2F%2Fvicflora-cdn.rbg.vic.gov.au%2Fassets%2Fcanto%2Fthumb%2Fexample.jpg"
+    );
+    expect(result.images[0].previewUrl).toBe(
+      "http://localhost:3000/images/vicflora?url=https%3A%2F%2Fvicflora-cdn.rbg.vic.gov.au%2Fassets%2Fcanto%2Fpreview%2Fexample.jpg"
+    );
+  });
 });
