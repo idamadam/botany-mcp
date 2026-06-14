@@ -8,9 +8,11 @@ Remote MCP server for authoritative plant information, starting with the public 
 - `get_plant_profile` - fetch a VicFlora taxon profile by concept ID or exact-ish name.
 - `find_plants_near_point` - fetch VicFlora occurrence context near a coordinate.
 - `lookup_botanical_terms` - look up botanical glossary terms from VicFlora.
+- `open_plant_learning_card` - open an MCP App learning card for a plant. The card combines VicFlora's Victorian treatment with ALA BIE taxon metadata and ALA Flora of Australia profile attributes. Clients that do not render MCP Apps still receive structured JSON plus text fallback content.
 
 The server is read-only. Tool responses include provider/source metadata and retrieval timestamps so model answers can stay grounded.
 Plant profile image URLs are served through this MCP's `/images/vicflora` proxy so browser clients can render VicFlora CDN images without CORS failures. Original CDN URLs are retained as `thumbnailSourceUrl` and `previewSourceUrl`.
+The learning card also uses the same image proxy for trusted ALA image hosts.
 
 ## Quick Start
 
@@ -30,6 +32,47 @@ The image proxy defaults to VicFlora hosts only; override `IMAGE_PROXY_ALLOWED_H
 curl http://localhost:3000/healthz
 curl http://localhost:3000/.well-known/oauth-protected-resource
 ```
+
+## MCP App Development
+
+The Plant Learning Card is bundled as a standards-first MCP App resource at:
+
+```text
+ui://botany/plant-learning-card.html
+```
+
+For interactive design without Claude, run the local UI preview harness:
+
+```bash
+npm run dev:ui
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5173/plant-learning-card.html?preview=1
+```
+
+Preview mode uses bundled sample profile data so the tabs are clickable in a normal browser. In Claude or another MCP Apps host, the same UI uses the MCP Apps bridge and renders the `open_plant_learning_card` result for live data.
+
+The card UI uses vendored [Oat](https://oat.ink/) assets from `ui/vendor` for lightweight semantic controls, then Vite inlines them into the single MCP App HTML resource.
+
+Build the UI before running a production build:
+
+```bash
+npm run build:ui
+npm run build
+```
+
+`npm run build` runs the UI bundle first, then compiles the MCP server.
+
+For local Claude testing, expose the local server with a tunnel such as Cloudflare Tunnel:
+
+```bash
+npx cloudflared tunnel --url http://localhost:3000
+```
+
+Then add the generated HTTPS URL as a Claude custom connector, using the `/mcp` endpoint. Claude custom connectors are available on supported paid Claude plans. The server already supports OAuth client credentials for hosted connector use.
 
 ## Auth
 
@@ -63,6 +106,8 @@ Then enter the same `OAUTH_CLIENT_ID` and `OAUTH_CLIENT_SECRET` in the client. T
 ## Useful Scripts
 
 ```bash
+npm run build:ui
+npm run build:server
 npm run typecheck
 npm test
 npm run build

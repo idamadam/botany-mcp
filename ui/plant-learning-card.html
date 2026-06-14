@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plant Learning Card</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      :root {
+        --primary: #276245;
+        --primary-foreground: #ffffff;
+        --background: #f4f7f1;
+        --foreground: #1f2521;
+        --card: #ffffff;
+        --card-foreground: #1f2521;
+        --border: #d2dccd;
+        --muted: #e1eadc;
+        --muted-foreground: #52604e;
+        --radius-small: 6px;
+        --radius-medium: 8px;
+        --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        color: #1f2521;
+        background: #f4f7f1;
+      }
+
+      .app-shell {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(160px, 240px) 1fr;
+        gap: 16px;
+        align-items: stretch;
+        margin-bottom: 14px;
+        overflow: hidden;
+        border: 1px solid #d2dccd;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .hero-image {
+        min-height: 180px;
+        background: #dfe8d9;
+      }
+
+      .hero-image img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .image-placeholder {
+        display: grid;
+        min-height: 180px;
+        place-items: center;
+        color: #5d6a59;
+      }
+
+      .hero-text {
+        align-self: center;
+        padding: 18px 18px 18px 0;
+      }
+
+      .common-name {
+        margin: 0 0 4px;
+        color: #276245;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.85rem;
+        font-style: italic;
+        font-weight: 650;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        margin: 0 0 8px;
+        font-size: 0.95rem;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0;
+        line-height: 1.45;
+      }
+
+      ot-tabs {
+        display: block;
+      }
+
+      [role="tablist"] {
+        margin-bottom: 10px;
+        overflow-x: auto;
+      }
+
+      [role="tabpanel"] {
+        border: 1px solid #d2dccd;
+        border-radius: 8px;
+        background: #fff;
+        padding: 14px;
+      }
+
+      .status-line {
+        margin-top: 10px;
+        color: #52604e;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      article + article,
+      .source-card + .source-card,
+      #citations + h2 {
+        margin-top: 14px;
+      }
+
+      .source-card {
+        border-left: 4px solid #9ba996;
+        padding: 10px 12px;
+        background: #f7faf4;
+      }
+
+      .source-card.is-present {
+        border-left-color: #276245;
+      }
+
+      .source-card.is-missing {
+        border-left-color: #a84d3a;
+      }
+
+      .source-card div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: baseline;
+      }
+
+      .source-card span {
+        color: #5d6a59;
+        font-size: 0.9rem;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      pre {
+        max-height: 360px;
+        overflow: auto;
+        padding: 10px;
+        border-radius: 6px;
+        background: #172019;
+        color: #e8f0e4;
+        font-size: 0.82rem;
+      }
+
+      @media (max-width: 680px) {
+        .hero,
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-text {
+          padding: 0 14px 14px;
+        }
+
+        h1 {
+          font-size: 1.45rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div class="hero-image" id="hero-image"></div>
+        <div class="hero-text">
+          <p class="common-name" id="display-name">Loading...</p>
+          <h1 id="scientific-name">Plant profile</h1>
+          <p class="status-line" id="status-line"></p>
+        </div>
+      </section>
+
+      <ot-tabs>
+        <div role="tablist" aria-label="Plant profile sections">
+          <button role="tab" type="button" aria-selected="true">Overview</button>
+          <button role="tab" type="button">How to recognise</button>
+          <button role="tab" type="button">Sources</button>
+          <button role="tab" type="button">Raw notes</button>
+        </div>
+
+        <section role="tabpanel" id="overview">
+          <div class="grid">
+            <article>
+              <h2>At a glance</h2>
+              <p id="summary"></p>
+            </article>
+            <article>
+              <h2>Habitat</h2>
+              <p id="habitat"></p>
+            </article>
+            <article>
+              <h2>Distribution</h2>
+              <p id="distribution"></p>
+            </article>
+            <article>
+              <h2>Names</h2>
+              <p id="common-names"></p>
+            </article>
+          </div>
+        </section>
+
+        <section role="tabpanel" id="recognise">
+          <article>
+            <h2>Diagnostic features</h2>
+            <p id="diagnostic"></p>
+          </article>
+          <article>
+            <h2>Description</h2>
+            <p id="description"></p>
+          </article>
+          <article>
+            <h2>Taxonomic notes</h2>
+            <p id="similarity"></p>
+          </article>
+        </section>
+
+        <section role="tabpanel" id="sources">
+          <div id="source-comparison" class="source-list"></div>
+          <h2>Citations</h2>
+          <ul id="citations"></ul>
+        </section>
+
+        <section role="tabpanel" id="raw">
+          <h2>Warnings</h2>
+          <ul id="warnings"></ul>
+          <h2>Structured result</h2>
+          <pre id="raw-json"></pre>
+        </section>
+      </ot-tabs>
+    </main>
+
+    <script type="module" src="./src/plant-learning-card.ts"></script>
+  </body>
+</html>

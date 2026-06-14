@@ -1,8 +1,17 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
+import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { config } from "./config.js";
+import { PlantLearningService } from "./learning.js";
 import { logger } from "./logger.js";
+import { AlaProvider } from "./providers/ala.js";
 import { BotanyProvider } from "./providers/types.js";
 import { schemaSummary, sourceLicense } from "./resources.js";
+
+const PLANT_LEARNING_CARD_URI = "ui://botany/plant-learning-card.html";
 
 const jsonText = (value: unknown) => ({
   content: [
@@ -13,11 +22,44 @@ const jsonText = (value: unknown) => ({
   ]
 });
 
+const learningCardText = (profile: unknown) => ({
+  content: [
+    {
+      type: "text" as const,
+      text: JSON.stringify({ profile }, null, 2)
+    }
+  ],
+  structuredContent: {
+    profile
+  }
+});
+
 const logToolQuery = (tool: string, query: Record<string, unknown>) => {
   logger.info({ tool, query }, "MCP tool query");
 };
 
+const readPlantLearningCardHtml = async () => {
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    join(currentDir, "../app/plant-learning-card.html"),
+    join(currentDir, "../dist/app/plant-learning-card.html"),
+    join(currentDir, "../ui/plant-learning-card.html"),
+    join(currentDir, "../../ui/plant-learning-card.html")
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      return await readFile(candidate, "utf8");
+    } catch {
+      // Try the next runtime/build location.
+    }
+  }
+
+  throw new Error("Plant Learning Card UI has not been built. Run npm run build:ui.");
+};
+
 export const createMcpServer = (provider: BotanyProvider) => {
+  const learningService = new PlantLearningService(provider, new AlaProvider());
   const server = new McpServer(
     {
       name: "Botany MCP",
@@ -26,6 +68,33 @@ export const createMcpServer = (provider: BotanyProvider) => {
     {
       instructions:
         "Use Botany MCP for authoritative plant information. Prefer returned source metadata over model memory, and never treat missing occurrence records as proof that a plant is absent."
+    }
+  );
+
+  registerAppTool(
+    server,
+    "open_plant_learning_card",
+    {
+      title: "Open plant learning card",
+      description:
+        "Open an interactive learning card for a plant. Combines VicFlora's Victorian authority data with ALA BIE taxon metadata and ALA Flora of Australia profile attributes. Returns structured JSON fallback content for clients that do not render MCP Apps.",
+      inputSchema: {
+        name: z.string().min(2).describe("Scientific name, common name, or partial plant name."),
+        region: z.literal("VIC").default("VIC").describe("Learning-card region. First cut supports Victoria.")
+      },
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: true
+      },
+      _meta: {
+        ui: {
+          resourceUri: PLANT_LEARNING_CARD_URI
+        }
+      }
+    },
+    async ({ name, region }) => {
+      logToolQuery("open_plant_learning_card", { name, region });
+      return learningCardText(await learningService.getLearningProfile({ name, region }));
     }
   );
 
@@ -176,6 +245,34 @@ export const createMcpServer = (provider: BotanyProvider) => {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(sourceLicense, null, 2)
+        }
+      ]
+    })
+  );
+
+  registerAppResource(
+    server,
+    "Plant Learning Card",
+    PLANT_LEARNING_CARD_URI,
+    {
+      title: "Plant Learning Card",
+      description: "Interactive plant learning card for VicFlora and ALA profile data.",
+      mimeType: RESOURCE_MIME_TYPE
+    },
+    async () => ({
+      contents: [
+        {
+          uri: PLANT_LEARNING_CARD_URI,
+          mimeType: RESOURCE_MIME_TYPE,
+          text: await readPlantLearningCardHtml(),
+          _meta: {
+            ui: {
+              csp: {
+                resourceDomains: [config.publicBaseUrl],
+                connectDomains: [config.publicBaseUrl]
+              }
+            }
+          }
         }
       ]
     })

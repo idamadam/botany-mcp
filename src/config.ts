@@ -46,7 +46,7 @@ export const config = {
   oauthAccessTokenTtlSeconds: toInt(process.env.OAUTH_ACCESS_TOKEN_TTL_SECONDS, 3600),
   imageProxyAllowedHosts: (
     process.env.IMAGE_PROXY_ALLOWED_HOSTS ??
-    "vicflora-cdn.rbg.vic.gov.au,vicflora.rbg.vic.gov.au"
+    "vicflora-cdn.rbg.vic.gov.au,vicflora.rbg.vic.gov.au,images.ala.org.au"
   )
     .split(",")
     .map((host) => host.trim().toLowerCase())
@@ -59,6 +59,12 @@ export const config = {
     process.env.VICFLORA_GRAPHQL_ENDPOINT ?? "https://vicflora.rbg.vic.gov.au/graphql",
   vicfloraTimeoutMs: toInt(process.env.VICFLORA_TIMEOUT_MS, 12000),
   vicfloraCacheTtlMs: toInt(process.env.VICFLORA_CACHE_TTL_MS, 300000),
+  alaBieSearchEndpoint:
+    process.env.ALA_BIE_SEARCH_ENDPOINT ?? "https://bie-ws.ala.org.au/ws/search.json",
+  alaProfilesBaseUrl:
+    trimTrailingSlash(process.env.ALA_PROFILES_BASE_URL ?? "https://profiles.ala.org.au"),
+  alaTimeoutMs: toInt(process.env.ALA_TIMEOUT_MS, 12000),
+  alaCacheTtlMs: toInt(process.env.ALA_CACHE_TTL_MS, 300000),
   logLevel: process.env.LOG_LEVEL ?? "info"
 };
 
