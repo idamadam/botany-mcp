@@ -4,11 +4,11 @@
   "description": "Remote MCP server for authoritative botany data, starting with VicFlora.",
   "type": "module",
   "bin": {
-    "botany-mcp": "dist/index.js"
+    "botany-mcp": "dist/src/index.js"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
