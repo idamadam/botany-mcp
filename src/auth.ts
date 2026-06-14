@@ -36,7 +36,7 @@ export const protectedResourceMetadata = () => ({
   ...(config.authRequired && oauthEnabled() ? { authorization_servers: [config.publicBaseUrl] } : {}),
   scopes_supported: ["plants:read"],
   bearer_methods_supported: ["header"],
-  resource_documentation: "https://github.com/idam/botany-mcp#readme"
+  resource_documentation: "https://github.com/idamadam/botany-mcp#readme"
 });
 
 export const authorizationServerMetadata = () => ({
