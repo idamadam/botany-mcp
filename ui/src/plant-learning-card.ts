@@ -220,6 +220,17 @@ const text = (id: string, value: string | undefined, fallback = "No data availab
 
 const joinParts = (parts: Array<string | undefined>) => parts.filter(Boolean).join(" | ");
 
+const MAX_THUMB_LABEL = 40;
+
+const galleryThumbLabel = (image: PlantImage, index: number) => {
+  const candidate = image.focus?.trim() || image.caption?.trim();
+  if (!candidate) return `Photo ${index + 1}`;
+  if (candidate.length <= MAX_THUMB_LABEL) return candidate;
+  return `${candidate.slice(0, MAX_THUMB_LABEL - 1)}…`;
+};
+
+const galleryTitle = (image: PlantImage) => image.focus?.trim() || "Photo";
+
 const renderScientificName = (profile: PlantLearningProfile) => {
   text("scientific-name", profile.scientificName);
 
@@ -253,13 +264,11 @@ const renderHeroImage = (profile: PlantLearningProfile) => {
   container.replaceChildren();
 
   if (!profile.heroImage?.url) {
-    const placeholder = document.createElement("div");
-    placeholder.className = "image-placeholder";
-    placeholder.textContent = profile.heroImage?.caption ?? "No image";
-    container.append(placeholder);
+    container.hidden = true;
     return;
   }
 
+  container.hidden = false;
   const image = document.createElement("img");
   image.src = profile.heroImage.url;
   image.alt = profile.heroImage.caption ?? profile.displayName;
@@ -312,7 +321,7 @@ const renderGalleryImage = (image: PlantImage, images: PlantImage[]) => {
   photo.alt = image.caption ?? image.focus ?? "Plant photo";
   frame.append(photo);
 
-  text("gallery-title", image.focus ?? "Photo");
+  text("gallery-title", galleryTitle(image));
   text("gallery-caption", image.caption);
   text(
     "gallery-credit",
@@ -368,7 +377,7 @@ const renderGallery = (profile: PlantLearningProfile) => {
     thumbnail.alt = "";
 
     const label = document.createElement("span");
-    label.textContent = image.focus ?? image.caption ?? `Photo ${index + 1}`;
+    label.textContent = galleryThumbLabel(image, index);
 
     button.append(thumbnail, label);
     button.addEventListener("click", () => renderGalleryImage(image, images));

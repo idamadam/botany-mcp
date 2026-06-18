@@ -76,7 +76,7 @@ const toolDefinition = (scenario: HarnessScenario): Tool => ({
   _meta: { ui: { resourceUri: scenario.tool.resourceUri } }
 });
 
-const minFrameHeight = 520;
+const minFrameHeight = 240;
 
 export class HarnessAppHost {
   private bridge?: AppBridge;

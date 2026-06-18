@@ -114,12 +114,12 @@ button:hover { border-color: var(--accent); }
 .role { display: block; margin: 0 0 6px; color: var(--muted); font-size: 11px; font-weight: 650; }
 .message p { margin: 0; line-height: 1.55; }
 .user p { padding: 10px 14px; border-radius: 16px 16px 4px 16px; background: var(--surface); border: 1px solid var(--border); }
-.card-slot-wrap { margin: -4px 0 26px 44px; }
+.card-slot-wrap { margin: -4px 0 16px 44px; }
 .tool-caption { display: flex; justify-content: space-between; align-items: center; margin: 0 2px 8px; color: var(--muted); font-size: 11px; }
 .tool-caption code { padding: 2px 6px; border-radius: 5px; background: var(--surface); }
-.card-slot { min-height: 160px; overflow: hidden; border: 1px solid var(--border); border-radius: 17px; background: var(--surface); }
-.card-slot.loading { display: grid; place-items: center; }
-.app-frame { display: block; width: 100%; min-height: 520px; border: 0; background: transparent; }
+.card-slot { min-height: 120px; overflow: hidden; background: transparent; }
+.card-slot.loading { display: grid; place-items: center; background: var(--surface); }
+.app-frame { display: block; width: 100%; min-height: 240px; border: 0; background: transparent; }
 .loading-state { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
 .loading-state span { width: 13px; height: 13px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
