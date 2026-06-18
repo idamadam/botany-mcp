@@ -1,4 +1,4 @@
-import { App } from "@modelcontextprotocol/ext-apps";
+import { App, applyDocumentTheme } from "@modelcontextprotocol/ext-apps";
 import "../vendor/oat.min.css";
 import "../vendor/oat.min.js";
 
@@ -67,6 +67,8 @@ type AppBridge = {
   callServerTool(input: { name: string; arguments: Record<string, unknown> }): Promise<ToolResult>;
   connect(): Promise<void> | void;
   ontoolresult?: (result: ToolResult) => void;
+  onhostcontextchanged?: (context: { theme?: "light" | "dark" }) => void;
+  getHostContext?: () => { theme?: "light" | "dark" } | undefined;
 };
 
 const sampleProfiles: Record<string, PlantLearningProfile> = {
@@ -217,6 +219,25 @@ const createBridge = (): AppBridge => {
 };
 
 const app = createBridge();
+
+const syncHostTheme = (theme?: "light" | "dark") => {
+  if (theme) {
+    applyDocumentTheme(theme);
+  }
+};
+
+if (app instanceof App) {
+  app.onhostcontextchanged = (context) => {
+    syncHostTheme(context.theme);
+  };
+} else if (isPreviewMode()) {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  const applyPreferredTheme = () => {
+    applyDocumentTheme(media.matches ? "dark" : "light");
+  };
+  applyPreferredTheme();
+  media.addEventListener("change", applyPreferredTheme);
+}
 
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const text = (id: string, value: string | undefined, fallback = "No data available yet.") => {
@@ -625,4 +646,8 @@ app.ontoolresult = (result) => {
   }
 };
 
-app.connect();
+void Promise.resolve(app.connect()).then(() => {
+  if (app instanceof App) {
+    syncHostTheme(app.getHostContext()?.theme);
+  }
+});
