@@ -2,19 +2,23 @@ import { App } from "@modelcontextprotocol/ext-apps";
 import "../vendor/oat.min.css";
 import "../vendor/oat.min.js";
 
+type PlantImage = {
+  url: string;
+  sourceUrl?: string;
+  caption?: string;
+  creator?: string;
+  license?: string;
+  focus?: string;
+};
+
 type PlantLearningProfile = {
   query: { name: string; region: "VIC" };
   displayName: string;
   scientificName: string;
   scientificNameWithAuthorship?: string;
   commonNames: string[];
-  heroImage?: {
-    url: string;
-    sourceUrl?: string;
-    caption?: string;
-    creator?: string;
-    license?: string;
-  };
+  heroImage?: PlantImage;
+  imageGallery?: PlantImage[];
   recognition: {
     summary?: string;
     diagnosticFeatures?: string;
@@ -70,12 +74,6 @@ const sampleProfiles: Record<string, PlantLearningProfile> = {
     scientificName: "Eucalyptus camaldulensis",
     scientificNameWithAuthorship: "Eucalyptus camaldulensis Dehnh.",
     commonNames: ["River Red-gum", "Red Gum", "River Red Gum", "Murray Red Gum"],
-    heroImage: {
-      url: "",
-      caption: "River Red-gum image area",
-      creator: "VicFlora",
-      license: "CC BY-NC-SA 4.0"
-    },
     recognition: {
       summary: "A smooth-barked tree along streams with cuboid-pyramidal seeds.",
       diagnosticFeatures: "Smooth mottled bark, long narrow adult leaves, white flowers, hemispherical fruit, and cuboid-pyramidal yellow-brown seeds.",
@@ -119,12 +117,12 @@ const sampleProfiles: Record<string, PlantLearningProfile> = {
     citations: [
       {
         label: "VicFlora",
-        source: "Brooker & Slee (1996). Flora of Victoria Vol. 3.",
+        source: "Taxon profile.",
         url: "https://vicflora.rbg.vic.gov.au/flora/taxon/b81ef7c6-89a0-45d7-9b2b-cebb16c7033a"
       },
       {
         label: "Flora of Australia",
-        source: "A.V. Slee, M.I.H. Brooker, S.M. Duffy, J.G. West; adapted from EUCLID.",
+        source: "Species profile.",
         url: "https://profiles.ala.org.au/opus/foa/profile/Eucalyptus%20camaldulensis"
       }
     ],
@@ -220,6 +218,16 @@ const text = (id: string, value: string | undefined, fallback = "No data availab
 
 const joinParts = (parts: Array<string | undefined>) => parts.filter(Boolean).join(" | ");
 
+const renderScientificName = (profile: PlantLearningProfile) => {
+  text("scientific-name", profile.scientificName);
+
+  const fullName = profile.scientificNameWithAuthorship?.trim();
+  const authorship = fullName?.startsWith(profile.scientificName)
+    ? fullName.slice(profile.scientificName.length).trim()
+    : "";
+  text("scientific-authorship", authorship, "");
+};
+
 const parseProfile = (result: ToolResult): PlantLearningProfile | undefined => {
   if (result.structuredContent?.profile) {
     return result.structuredContent.profile;
@@ -254,44 +262,16 @@ const renderHeroImage = (profile: PlantLearningProfile) => {
   image.src = profile.heroImage.url;
   image.alt = profile.heroImage.caption ?? profile.displayName;
   container.append(image);
-};
 
-const renderList = (id: string, items: string[]) => {
-  const list = byId<HTMLUListElement>(id);
-  list.replaceChildren();
-
-  if (items.length === 0) {
-    const item = document.createElement("li");
-    item.textContent = "None.";
-    list.append(item);
-    return;
-  }
-
-  for (const value of items) {
-    const item = document.createElement("li");
-    item.textContent = value;
-    list.append(item);
-  }
-};
-
-const renderSources = (profile: PlantLearningProfile) => {
-  const container = byId("source-comparison");
-  container.replaceChildren();
-
-  for (const source of profile.sourceComparison) {
-    const card = document.createElement("article");
-    card.className = `source-card ${source.present ? "is-present" : "is-missing"}`;
-    card.innerHTML = `
-      <div>
-        <strong></strong>
-        <span></span>
-      </div>
-      <p></p>
-    `;
-    card.querySelector("strong")!.textContent = source.source;
-    card.querySelector("span")!.textContent = source.role;
-    card.querySelector("p")!.textContent = source.summary;
-    container.append(card);
+  const creditText = joinParts([
+    profile.heroImage.creator && `Photo: ${profile.heroImage.creator}`,
+    profile.heroImage.license
+  ]);
+  if (creditText) {
+    const credit = document.createElement("p");
+    credit.className = "image-credit";
+    credit.textContent = creditText;
+    container.append(credit);
   }
 };
 
@@ -321,9 +301,84 @@ const renderCitations = (profile: PlantLearningProfile) => {
   }
 };
 
+const renderGalleryImage = (image: PlantImage, images: PlantImage[]) => {
+  const frame = byId("gallery-frame");
+  frame.replaceChildren();
+
+  const photo = document.createElement("img");
+  photo.src = image.url;
+  photo.alt = image.caption ?? image.focus ?? "Plant photo";
+  frame.append(photo);
+
+  text("gallery-title", image.focus ?? "Photo");
+  text("gallery-caption", image.caption);
+  text(
+    "gallery-credit",
+    joinParts([
+      image.creator && `Photo: ${image.creator}`,
+      image.license
+    ]),
+    "Photo credit unavailable."
+  );
+
+  const source = byId<HTMLAnchorElement>("gallery-source");
+  if (image.sourceUrl) {
+    source.href = image.sourceUrl;
+    source.hidden = false;
+  } else {
+    source.hidden = true;
+  }
+
+  byId("gallery-thumbnails")
+    .querySelectorAll<HTMLButtonElement>(".gallery-thumb")
+    .forEach((button, index) => {
+      button.setAttribute("aria-pressed", String(images[index] === image));
+    });
+};
+
+const renderGallery = (profile: PlantLearningProfile) => {
+  const thumbnails = byId("gallery-thumbnails");
+  thumbnails.replaceChildren();
+
+  const images = profile.imageGallery?.length
+    ? profile.imageGallery
+    : profile.heroImage?.url
+      ? [profile.heroImage]
+      : [];
+
+  if (images.length === 0) {
+    byId("gallery-frame").replaceChildren();
+    text("gallery-title", "Photos");
+    text("gallery-caption", undefined, "No photos returned yet.");
+    text("gallery-credit", undefined, "");
+    byId<HTMLAnchorElement>("gallery-source").hidden = true;
+    return;
+  }
+
+  for (const [index, image] of images.entries()) {
+    const button = document.createElement("button");
+    button.className = "gallery-thumb";
+    button.type = "button";
+    button.setAttribute("aria-pressed", String(index === 0));
+
+    const thumbnail = document.createElement("img");
+    thumbnail.src = image.url;
+    thumbnail.alt = "";
+
+    const label = document.createElement("span");
+    label.textContent = image.focus ?? image.caption ?? `Photo ${index + 1}`;
+
+    button.append(thumbnail, label);
+    button.addEventListener("click", () => renderGalleryImage(image, images));
+    thumbnails.append(button);
+  }
+
+  renderGalleryImage(images[0], images);
+};
+
 const renderProfile = (profile: PlantLearningProfile) => {
   text("display-name", profile.displayName);
-  text("scientific-name", profile.scientificNameWithAuthorship ?? profile.scientificName);
+  renderScientificName(profile);
   text(
     "status-line",
     joinParts([
@@ -335,6 +390,7 @@ const renderProfile = (profile: PlantLearningProfile) => {
   );
 
   renderHeroImage(profile);
+  renderGallery(profile);
   text("summary", profile.recognition.summary);
   text("habitat", joinParts([
     profile.habitat?.victoria && `Victoria: ${profile.habitat.victoria}`,
@@ -348,10 +404,7 @@ const renderProfile = (profile: PlantLearningProfile) => {
   text("diagnostic", profile.recognition.diagnosticFeatures);
   text("description", profile.recognition.description);
   text("similarity", profile.similarityNotes);
-  renderSources(profile);
   renderCitations(profile);
-  renderList("warnings", profile.warnings);
-  byId("raw-json").textContent = JSON.stringify(profile, null, 2);
 };
 
 app.ontoolresult = (result) => {

@@ -10,47 +10,72 @@
       }
 
       :root {
-        --primary: #276245;
+        color-scheme: light;
+        --primary: #587160;
+        --primary-strong: #405747;
         --primary-foreground: #ffffff;
-        --background: #f4f7f1;
-        --foreground: #1f2521;
-        --card: #ffffff;
-        --card-foreground: #1f2521;
-        --border: #d2dccd;
-        --muted: #e1eadc;
-        --muted-foreground: #52604e;
-        --radius-small: 6px;
-        --radius-medium: 8px;
+        --background: #f2f3ee;
+        --foreground: #303832;
+        --card: #fbfcf9;
+        --card-foreground: #303832;
+        --border: #d9ddd6;
+        --muted: #e9ece6;
+        --muted-foreground: #626c64;
+        --faint: #f4f6f2;
+        --accent: #e3e9e2;
+        --danger: #956052;
+        --ring: #718878;
+        --radius-small: 8px;
+        --radius-medium: 12px;
+        --radius-large: 16px;
+        --shadow-soft: 0 1px 2px rgb(42 53 45 / 0.05), 0 8px 24px rgb(42 53 45 / 0.035);
         --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --text-body: 1rem;
+        --text-control: 0.875rem;
+        --text-caption: 0.8125rem;
       }
 
       body {
         margin: 0;
-        color: #1f2521;
-        background: #f4f7f1;
+        color: var(--foreground);
+        background: var(--background);
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        font-weight: 400;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
       }
 
       .app-shell {
         max-width: 920px;
         margin: 0 auto;
-        padding: 16px;
+        padding: 24px;
       }
 
       .hero {
         display: grid;
         grid-template-columns: minmax(160px, 240px) 1fr;
-        gap: 16px;
+        gap: 0;
         align-items: stretch;
-        margin-bottom: 14px;
+        margin-bottom: 18px;
         overflow: hidden;
-        border: 1px solid #d2dccd;
-        border-radius: 8px;
-        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-large);
+        background: var(--card);
+        box-shadow: var(--shadow-soft);
       }
 
       .hero-image {
+        position: relative;
         min-height: 180px;
-        background: #dfe8d9;
+        background: var(--muted);
       }
 
       .hero-image img {
@@ -60,42 +85,84 @@
         object-fit: cover;
       }
 
+      .image-credit {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        left: 8px;
+        padding: 5px 7px;
+        border: 1px solid rgb(255 255 255 / 0.14);
+        border-radius: var(--radius-small);
+        color: #fff;
+        background: rgb(39 53 44 / 0.76);
+        font-size: var(--text-caption);
+        line-height: 1.4;
+      }
+
       .image-placeholder {
         display: grid;
         min-height: 180px;
         place-items: center;
-        color: #5d6a59;
+        color: var(--muted-foreground);
       }
 
       .hero-text {
         align-self: center;
-        padding: 18px 18px 18px 0;
+        padding: 24px;
       }
 
       .common-name {
         margin: 0 0 4px;
-        color: #276245;
-        font-size: 0.95rem;
-        font-weight: 700;
+        color: var(--primary-strong);
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.5;
       }
 
       h1 {
         margin: 0;
-        font-size: 1.85rem;
-        font-style: italic;
-        font-weight: 650;
+        font-size: 1.875rem;
+        font-weight: 600;
+        line-height: 1.25;
         letter-spacing: 0;
+        text-wrap: balance;
+      }
+
+      .taxon-name {
+        font-style: italic;
+      }
+
+      .taxon-authorship {
+        font-style: normal;
+      }
+
+      .taxon-authorship:not(:empty)::before {
+        content: " ";
       }
 
       h2 {
         margin: 0 0 8px;
-        font-size: 0.95rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        line-height: 1.333;
         letter-spacing: 0;
       }
 
       p {
         margin: 0;
-        line-height: 1.45;
+        line-height: 1.5;
+      }
+
+      a {
+        color: var(--primary-strong);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+      }
+
+      article > p,
+      .gallery-details > p,
+      #citations {
+        max-width: 68ch;
       }
 
       ot-tabs {
@@ -103,20 +170,53 @@
       }
 
       [role="tablist"] {
-        margin-bottom: 10px;
+        display: flex;
+        width: max-content;
+        max-width: 100%;
+        gap: 2px;
+        margin-bottom: 12px;
         overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-medium);
+        background: var(--muted);
+      }
+
+      [role="tab"],
+      .gallery-thumb {
+        font-size: var(--text-control);
+        font-weight: 500;
+        line-height: 1.4;
+      }
+
+      [role="tab"] {
+        color: var(--muted-foreground);
+        border-radius: var(--radius-small);
+      }
+
+      [role="tab"]:hover {
+        color: var(--foreground);
+        background: rgb(255 255 255 / 0.42);
+      }
+
+      [role="tab"][aria-selected="true"] {
+        color: var(--foreground);
+        background: var(--card);
+        box-shadow: 0 1px 3px rgb(42 53 45 / 0.1);
       }
 
       [role="tabpanel"] {
-        border: 1px solid #d2dccd;
-        border-radius: 8px;
-        background: #fff;
-        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-large);
+        background: var(--card);
+        padding: 22px;
+        box-shadow: var(--shadow-soft);
       }
 
       .status-line {
         margin-top: 10px;
-        color: #52604e;
+        color: var(--muted-foreground);
+        font-size: var(--text-control);
+        line-height: 1.4;
       }
 
       .grid {
@@ -125,65 +225,141 @@
         gap: 14px;
       }
 
-      article + article,
-      .source-card + .source-card,
-      #citations + h2 {
-        margin-top: 14px;
+      .overview-stack {
+        display: grid;
+        gap: 0;
       }
 
-      .source-card {
-        border-left: 4px solid #9ba996;
-        padding: 10px 12px;
-        background: #f7faf4;
+      .overview-stack article + article {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
       }
 
-      .source-card.is-present {
-        border-left-color: #276245;
+      .gallery-stage {
+        display: grid;
+        grid-template-columns: minmax(280px, 1.35fr) minmax(220px, 0.65fr);
+        gap: 14px;
+        align-items: stretch;
       }
 
-      .source-card.is-missing {
-        border-left-color: #a84d3a;
+      .gallery-frame {
+        position: relative;
+        aspect-ratio: 4 / 3;
+        min-height: 0;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-medium);
+        background: var(--muted);
       }
 
-      .source-card div {
-        display: flex;
-        flex-wrap: wrap;
+      .gallery-frame img {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .gallery-details {
+        align-self: end;
+      }
+
+      .gallery-meta {
+        margin-top: 8px;
+        color: var(--muted-foreground);
+        font-size: var(--text-control);
+        line-height: 1.4;
+      }
+
+      .gallery-source {
+        display: inline-block;
+        margin-top: 10px;
+        font-size: var(--text-control);
+        font-weight: 500;
+        line-height: 1.4;
+      }
+
+      .gallery-thumbnails {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 8px;
-        align-items: baseline;
+        margin-top: 12px;
       }
 
-      .source-card span {
-        color: #5d6a59;
-        font-size: 0.9rem;
+      .gallery-thumb {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 6px;
+        min-height: 0;
+        padding: 6px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-medium);
+        color: var(--foreground);
+        background: var(--faint);
+        text-align: left;
+        transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+      }
+
+      .gallery-thumb[aria-pressed="true"] {
+        border-color: var(--ring);
+        background: var(--card);
+        box-shadow: 0 0 0 2px rgb(113 136 120 / 0.13);
+      }
+
+      .gallery-thumb img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        border-radius: 5px;
+        object-fit: cover;
+      }
+
+      .gallery-thumb span {
+        line-height: inherit;
+      }
+
+      article + article {
+        margin-top: 24px;
       }
 
       ul {
         margin: 0;
         padding-left: 20px;
+        line-height: 1.5;
       }
 
-      pre {
-        max-height: 360px;
-        overflow: auto;
-        padding: 10px;
-        border-radius: 6px;
-        background: #172019;
-        color: #e8f0e4;
-        font-size: 0.82rem;
+      .source-links {
+        display: grid;
+        gap: 8px;
+      }
+
+      .source-links li {
+        margin: 0;
       }
 
       @media (max-width: 680px) {
+        .app-shell {
+          padding: 12px;
+        }
+
         .hero,
-        .grid {
+        .grid,
+        .gallery-stage {
           grid-template-columns: 1fr;
         }
 
+        .gallery-thumbnails {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
         .hero-text {
-          padding: 0 14px 14px;
+          padding: 20px;
         }
 
         h1 {
-          font-size: 1.45rem;
+          font-size: 1.5rem;
         }
       }
     </style>
@@ -194,7 +370,7 @@
         <div class="hero-image" id="hero-image"></div>
         <div class="hero-text">
           <p class="common-name" id="display-name">Loading...</p>
-          <h1 id="scientific-name">Plant profile</h1>
+          <h1><i class="taxon-name" id="scientific-name">Plant profile</i><span class="taxon-authorship" id="scientific-authorship"></span></h1>
           <p class="status-line" id="status-line"></p>
         </div>
       </section>
@@ -202,13 +378,12 @@
       <ot-tabs>
         <div role="tablist" aria-label="Plant profile sections">
           <button role="tab" type="button" aria-selected="true">Overview</button>
+          <button role="tab" type="button">Photos</button>
           <button role="tab" type="button">How to recognise</button>
-          <button role="tab" type="button">Sources</button>
-          <button role="tab" type="button">Raw notes</button>
         </div>
 
         <section role="tabpanel" id="overview">
-          <div class="grid">
+          <div class="overview-stack">
             <article>
               <h2>At a glance</h2>
               <p id="summary"></p>
@@ -225,7 +400,24 @@
               <h2>Names</h2>
               <p id="common-names"></p>
             </article>
+            <article>
+              <h2>Sources</h2>
+              <ul class="source-links" id="citations"></ul>
+            </article>
           </div>
+        </section>
+
+        <section role="tabpanel" id="photos">
+          <div class="gallery-stage">
+            <div class="gallery-frame" id="gallery-frame"></div>
+            <div class="gallery-details">
+              <h2 id="gallery-title">Photos</h2>
+              <p id="gallery-caption"></p>
+              <p class="gallery-meta" id="gallery-credit"></p>
+              <a class="gallery-source" id="gallery-source" href="#" target="_blank" rel="noreferrer">Open source image</a>
+            </div>
+          </div>
+          <div class="gallery-thumbnails" id="gallery-thumbnails"></div>
         </section>
 
         <section role="tabpanel" id="recognise">
@@ -243,18 +435,6 @@
           </article>
         </section>
 
-        <section role="tabpanel" id="sources">
-          <div id="source-comparison" class="source-list"></div>
-          <h2>Citations</h2>
-          <ul id="citations"></ul>
-        </section>
-
-        <section role="tabpanel" id="raw">
-          <h2>Warnings</h2>
-          <ul id="warnings"></ul>
-          <h2>Structured result</h2>
-          <pre id="raw-json"></pre>
-        </section>
       </ot-tabs>
     </main>
 
