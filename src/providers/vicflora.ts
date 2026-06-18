@@ -171,13 +171,20 @@ const TAXON_PROFILE_QUERY = `
       flowers
       fruit
     }
-    taxonConceptImages(taxonConceptId: $id, first: 5, page: 1) {
+    taxonConceptImages(taxonConceptId: $id, first: 20, page: 1) {
       data {
         id
         title
         caption
         creator
         license
+        heroImage
+        subjectCategory
+        type
+        subtype
+        rating
+        pixelXDimension
+        pixelYDimension
         thumbnailUrl
         previewUrl
       }

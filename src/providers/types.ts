@@ -60,11 +60,18 @@ export type PlantProfile = {
     title?: string;
     caption?: string;
     creator?: string;
-    license?: string;
+    license?: string | null;
     thumbnailUrl?: string;
     thumbnailSourceUrl?: string;
     previewUrl?: string;
     previewSourceUrl?: string;
+    heroImage?: boolean;
+    subjectCategory?: string | null;
+    type?: string | null;
+    subtype?: string | null;
+    rating?: number | null;
+    pixelXDimension?: number | null;
+    pixelYDimension?: number | null;
   }>;
   references: ProfileReference[];
   metadata: SourceMetadata;
@@ -137,6 +144,14 @@ export type PlantLearningProfile = {
     creator?: string;
     license?: string;
   };
+  imageGallery?: Array<{
+    url: string;
+    sourceUrl?: string;
+    caption?: string;
+    creator?: string;
+    license?: string;
+    focus?: string;
+  }>;
   recognition: {
     summary?: string;
     diagnosticFeatures?: string;

@@ -124,6 +124,82 @@ describe("PlantLearningService", () => {
     expect(result.citations.map((citation) => citation.label)).toContain("Flora of Australia");
   });
 
+  it("prefers VicFlora heroImage over detail shots earlier in the list", async () => {
+    const profileWithMixedImages: PlantProfile = {
+      ...vicfloraProfile,
+      images: [
+        {
+          id: "detail",
+          title: "Longitudinal section through capsule",
+          previewUrl: "http://localhost:3000/images/vicflora?url=https%3A%2F%2Fexample.test%2Fdetail.jpg",
+          previewSourceUrl: "https://example.test/detail.jpg",
+          heroImage: false,
+          rating: 5,
+          pixelXDimension: 1200,
+          pixelYDimension: 900
+        },
+        {
+          id: "habit",
+          title: "Big old river red gum beside the Murray River",
+          previewUrl: "http://localhost:3000/images/vicflora?url=https%3A%2F%2Fexample.test%2Fhabit.jpg",
+          previewSourceUrl: "https://example.test/habit.jpg",
+          heroImage: false,
+          rating: 4,
+          pixelXDimension: 3872,
+          pixelYDimension: 2592
+        }
+      ]
+    };
+
+    const service = new PlantLearningService(provider(profileWithMixedImages), {
+      resolveTaxon: async () => ({ query: "Eucalyptus camaldulensis", metadata }),
+      getFloraProfile: async () => ({ query: "Eucalyptus camaldulensis", metadata })
+    });
+
+    const result = await service.getLearningProfile({ name: "Eucalyptus camaldulensis" });
+
+    expect(result.heroImage?.url).toContain("habit.jpg");
+    expect(result.imageGallery).toHaveLength(2);
+    expect(result.imageGallery?.[0].focus).toContain("Longitudinal section");
+  });
+
+  it("skips VicFlora flowering-branch hero flags for habit overview shots", async () => {
+    const profileWithMixedImages: PlantProfile = {
+      ...vicfloraProfile,
+      images: [
+        {
+          id: "flower-branch",
+          title: "Acacia pycnantha flg brnch near Cave of Ghosts",
+          previewUrl: "http://localhost:3000/images/vicflora?url=https%3A%2F%2Fexample.test%2Fflower.jpg",
+          previewSourceUrl: "https://example.test/flower.jpg",
+          heroImage: true,
+          rating: 5,
+          pixelXDimension: 3000,
+          pixelYDimension: 2000
+        },
+        {
+          id: "habit",
+          title: "Mature golden wattle tree in woodland",
+          previewUrl: "http://localhost:3000/images/vicflora?url=https%3A%2F%2Fexample.test%2Ftree.jpg",
+          previewSourceUrl: "https://example.test/tree.jpg",
+          heroImage: false,
+          rating: 4,
+          pixelXDimension: 4000,
+          pixelYDimension: 3000
+        }
+      ]
+    };
+
+    const service = new PlantLearningService(provider(profileWithMixedImages), {
+      resolveTaxon: async () => ({ query: "Acacia pycnantha", metadata }),
+      getFloraProfile: async () => ({ query: "Acacia pycnantha", metadata })
+    });
+
+    const result = await service.getLearningProfile({ name: "Acacia pycnantha" });
+
+    expect(result.heroImage?.url).toContain("tree.jpg");
+  });
+
   it("returns a VicFlora-only profile when ALA sources are unavailable", async () => {
     const service = new PlantLearningService(provider(vicfloraProfile), {
       resolveTaxon: async () => ({ query: "Eucalyptus camaldulensis", metadata }),
