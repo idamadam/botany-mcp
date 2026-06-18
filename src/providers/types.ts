@@ -128,6 +128,17 @@ export type GlossaryResult = {
   metadata: SourceMetadata;
 };
 
+export type PlantLearningImage = {
+  url: string;
+  sourceUrl?: string;
+  caption?: string;
+  creator?: string;
+  license?: string;
+  focus?: string;
+  displayLabel?: string;
+  group?: "habit" | "flowers" | "fruit" | "details";
+};
+
 export type PlantLearningProfile = {
   query: {
     name: string;
@@ -136,55 +147,51 @@ export type PlantLearningProfile = {
   displayName: string;
   scientificName: string;
   scientificNameWithAuthorship?: string;
-  commonNames: string[];
-  heroImage?: {
-    url: string;
-    sourceUrl?: string;
-    caption?: string;
-    creator?: string;
-    license?: string;
+  family?: string;
+  groupLabel?: string;
+  spotIt: {
+    oneLiner?: string;
+    fieldMarks: string[];
+    heroImage?: PlantLearningImage;
   };
-  imageGallery?: Array<{
-    url: string;
-    sourceUrl?: string;
-    caption?: string;
-    creator?: string;
-    license?: string;
-    focus?: string;
-  }>;
-  recognition: {
-    summary?: string;
-    diagnosticFeatures?: string;
-    description?: string;
-  };
-  status: {
-    victorian?: string;
-    establishmentMeans?: string;
-    degreeOfEstablishment?: string;
-    nationalBiostatus?: string;
+  inVictoria: {
+    statusLabel: string;
+    where?: string;
+    when?: string;
     conservation?: string;
   };
-  distribution?: {
-    victoria?: string;
-    national?: string;
+  detail: {
+    fullDescription?: string;
+    nationalRange?: string;
+    nationalHabitat?: string;
+    confusionNotes?: string;
   };
-  habitat?: {
-    victoria?: string;
-    national?: string;
+  media: {
+    gallery: PlantLearningImage[];
+    groups?: {
+      habit: PlantLearningImage[];
+      flowers: PlantLearningImage[];
+      fruit: PlantLearningImage[];
+      details: PlantLearningImage[];
+    };
   };
-  similarityNotes?: string;
-  sourceComparison: Array<{
+  naming: {
+    commonNames: string[];
+    alsoKnownAs: string[];
+    synonyms?: string[];
+  };
+  references: Array<{
+    label: string;
+    source: string;
+    url?: string;
+  }>;
+  sources: Array<{
     source: string;
     role: string;
     present: boolean;
     summary: string;
     url?: string;
     iconUrl?: string;
-  }>;
-  citations: Array<{
-    label: string;
-    source: string;
-    url?: string;
   }>;
   rawSources: {
     vicflora?: PlantProfile;

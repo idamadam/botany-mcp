@@ -4,7 +4,7 @@ import { parseScenarios, scenarios } from "../harness/src/scenarios.js";
 
 describe("chat harness scenarios", () => {
   it("validates every authored fixture against the expected app result shape", () => {
-    expect(parseScenarios(scenarios)).toHaveLength(2);
+    expect(parseScenarios(scenarios)).toHaveLength(4);
   });
 
   it("rejects malformed fixture results", () => {

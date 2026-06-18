@@ -1,6 +1,13 @@
 import { config } from "./config.js";
 import { AlaFloraProfile, AlaProvider, AlaTaxon } from "./providers/ala.js";
-import { BotanyProvider, PlantLearningProfile, PlantProfile, SourceMetadata } from "./providers/types.js";
+import {
+  BotanyProvider,
+  PlantLearningImage,
+  PlantLearningProfile,
+  PlantProfile,
+  SourceMetadata,
+  TaxonSummary
+} from "./providers/types.js";
 
 type AlaDataProvider = Pick<AlaProvider, "resolveTaxon" | "getFloraProfile">;
 
@@ -12,7 +19,25 @@ type VicFloraSections = {
   note?: string;
 };
 
+type ImageGroupKey = NonNullable<PlantLearningImage["group"]>;
+
 const SOURCE_URL = "botany://learning-profile";
+
+const MONTH_ORDER = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const GENUS_GROUP_LABELS: Record<string, string> = {
+  acacia: "Wattle",
+  eucalyptus: "Eucalypt",
+  banksia: "Banksia",
+  melaleuca: "Paperbark",
+  callistemon: "Bottlebrush",
+  leptospermum: "Tea-tree",
+  hakea: "Hakea",
+  grevillea: "Grevillea"
+};
+
+const CONFUSION_PATTERN =
+  /\b(confus|similar|distinguish|compare|differs? from|mistaken|lookalike|resembles?)\b/i;
 
 const htmlEntities: Record<string, string> = {
   "&nbsp;": " ",
@@ -37,14 +62,38 @@ const htmlToText = (value: string | undefined) =>
     .replace(/[ \t]{2,}/g, " ")
     .trim();
 
-const firstSentence = (value: string | undefined) => {
-  const text = value?.trim();
-  if (!text) {
-    return undefined;
+const cleanCommonName = (name: string) =>
+  name.trim().replace(/[.,;]+$/, "").trim();
+
+const isUsefulCommonName = (name: string) => {
+  const cleaned = cleanCommonName(name);
+  if (cleaned.length < 4 || !/[a-z]/i.test(cleaned)) {
+    return false;
   }
 
-  const match = text.match(/^(.{30,220}?[.!?])\s/);
-  return match?.[1] ?? text.slice(0, 220);
+  const words = cleaned.split(/\s+/);
+  return words.length >= 2 || cleaned.length >= 8;
+};
+
+const curateAlsoKnownAs = (
+  names: string[],
+  displayName: string,
+  scientificName: string,
+  limit = 5
+) => {
+  const skip = new Set([displayName, scientificName].map((value) => value.toLowerCase()));
+
+  return unique(names.map(cleanCommonName).filter(isUsefulCommonName))
+    .filter((name) => !skip.has(name.toLowerCase()))
+    .filter((name, index, list) =>
+      !list.some((other) =>
+        other !== name &&
+        other.toLowerCase() !== name.toLowerCase() &&
+        other.toLowerCase().includes(name.toLowerCase()) &&
+        other.length > name.length
+      )
+    )
+    .slice(0, limit);
 };
 
 const unique = (values: Array<string | undefined | null>) => {
@@ -123,12 +172,13 @@ const proxyFavicon = (pageUrl: string | undefined) => {
 };
 
 type ProfileImage = PlantProfile["images"][number];
-type LearningImage = NonNullable<PlantLearningProfile["imageGallery"]>[number];
 
 const DETAIL_IMAGE_PATTERN =
   /\b(section|capsule|seed|seeds|fruit|flower|flowers|microscop|longitudinal|cross[\s-]?section|transverse|fig\.?\s*\d|figure)\b/i;
 const CLOSEUP_IMAGE_PATTERN =
   /\b(flg|flower|branch|brnch|leaf|leaves|bud|buds|fruit|inflorescence|close[\s-]?up|macro)\b/i;
+const FLOWER_IMAGE_PATTERN = /\b(flg|flower|flowers|bud|buds|inflorescence)\b/i;
+const FRUIT_IMAGE_PATTERN = /\b(fruit|capsule|seed|seeds|gumnut|pod|pods)\b/i;
 const HABIT_IMAGE_PATTERN =
   /\b(old|mature|trunk|habit|whole|stand|woodland|forest|specimen|ancient|gnarled|tree|gum|wattle|big)\b/i;
 const ILLUSTRATION_CATEGORY_PATTERN = /figure|illustration|drawing|line\s*art/i;
@@ -171,65 +221,89 @@ const heroCandidateScore = (image: ProfileImage) => {
   return score;
 };
 
-const toLearningImage = (image: ProfileImage): LearningImage => ({
-  url: image.previewUrl ?? image.thumbnailUrl ?? "",
-  sourceUrl: image.previewSourceUrl ?? image.thumbnailSourceUrl,
-  caption: htmlToText(image.caption),
-  creator: image.creator,
-  license: image.license ?? undefined,
-  focus: image.title?.trim() || undefined
-});
+const classifyImageGroup = (image: ProfileImage): ImageGroupKey => {
+  const label = imageLabel(image).toLowerCase();
+
+  if (isIllustration(image) || isDetailShot(image)) {
+    return "details";
+  }
+  if (FLOWER_IMAGE_PATTERN.test(label)) {
+    return "flowers";
+  }
+  if (FRUIT_IMAGE_PATTERN.test(label)) {
+    return "fruit";
+  }
+  return "habit";
+};
+
+const GROUP_DISPLAY_LABELS: Record<ImageGroupKey, string> = {
+  habit: "Whole plant",
+  flowers: "Flowers",
+  fruit: "Fruit or seeds",
+  details: "Close-up detail"
+};
+
+const learnerDisplayLabel = (image: ProfileImage, group: ImageGroupKey) => {
+  const caption = htmlToText(image.caption);
+  if (caption && caption.length <= 80 && !caption.includes(">")) {
+    return caption;
+  }
+  return GROUP_DISPLAY_LABELS[group];
+};
+
+const toLearningImage = (image: ProfileImage, group?: ImageGroupKey): PlantLearningImage => {
+  const resolvedGroup = group ?? classifyImageGroup(image);
+  return {
+    url: image.previewUrl ?? image.thumbnailUrl ?? "",
+    sourceUrl: image.previewSourceUrl ?? image.thumbnailSourceUrl,
+    caption: htmlToText(image.caption),
+    creator: image.creator,
+    license: image.license ?? undefined,
+    focus: image.title?.trim() || undefined,
+    group: resolvedGroup,
+    displayLabel: learnerDisplayLabel(image, resolvedGroup)
+  };
+};
 
 const pickHeroImage = (
   images: ProfileImage[],
   alaTaxon: AlaTaxon | undefined
-): PlantLearningProfile["heroImage"] => {
+): PlantLearningProfile["spotIt"]["heroImage"] => {
   const candidates = images.filter(isHeroCandidate);
   const selected =
     candidates.sort((left, right) => heroCandidateScore(right) - heroCandidateScore(left))[0] ??
     images.find(imageHasUrl);
 
   if (selected) {
-    const learningImage = toLearningImage(selected);
-    return {
-      url: learningImage.url,
-      sourceUrl: learningImage.sourceUrl,
-      caption: learningImage.caption,
-      creator: learningImage.creator,
-      license: learningImage.license
-    };
+    return toLearningImage(selected, "habit");
   }
 
   if (alaTaxon?.imageUrl || alaTaxon?.thumbnailUrl) {
     return {
       url: alaTaxon.imageUrl ?? alaTaxon.thumbnailUrl ?? "",
       sourceUrl: alaTaxon.imageSourceUrl ?? alaTaxon.thumbnailSourceUrl,
-      caption: alaTaxon.commonNameSingle ?? alaTaxon.scientificName
+      caption: alaTaxon.commonNameSingle ?? alaTaxon.scientificName,
+      group: "habit",
+      displayLabel: "Whole plant"
     };
   }
 
   return undefined;
 };
 
-const buildImageGallery = (images: ProfileImage[]): PlantLearningProfile["imageGallery"] => {
-  const gallery = images.filter(imageHasUrl).map(toLearningImage);
-  return gallery.length > 0 ? gallery : undefined;
-};
+const buildImageGallery = (images: ProfileImage[]): PlantLearningImage[] =>
+  images.filter(imageHasUrl).map((image) => toLearningImage(image));
 
 const orderGalleryWithHeroFirst = (
-  gallery: PlantLearningProfile["imageGallery"],
-  hero: PlantLearningProfile["heroImage"]
-): PlantLearningProfile["imageGallery"] => {
-  if (!gallery?.length || !hero?.url) {
+  gallery: PlantLearningImage[],
+  hero?: PlantLearningImage
+): PlantLearningImage[] => {
+  if (!gallery.length || !hero?.url) {
     return gallery;
   }
 
   const heroIndex = gallery.findIndex((image) => image.url === hero.url);
-  if (heroIndex < 0) {
-    return gallery;
-  }
-
-  if (heroIndex === 0) {
+  if (heroIndex <= 0) {
     return gallery;
   }
 
@@ -237,6 +311,231 @@ const orderGalleryWithHeroFirst = (
   const [heroItem] = reordered.splice(heroIndex, 1);
   reordered.unshift(heroItem);
   return reordered;
+};
+
+const groupGalleryImages = (gallery: PlantLearningImage[]) => {
+  const groups: NonNullable<PlantLearningProfile["media"]["groups"]> = {
+    habit: [],
+    flowers: [],
+    fruit: [],
+    details: []
+  };
+
+  for (const image of gallery) {
+    const key = image.group ?? "habit";
+    groups[key].push(image);
+  }
+
+  const hasGroupedContent = Object.values(groups).some((items) => items.length > 0);
+  return hasGroupedContent ? groups : undefined;
+};
+
+const openingSentence = (value: string | undefined) => {
+  const text = value?.trim();
+  if (!text) {
+    return undefined;
+  }
+
+  const match = text.match(/^(.+?[.!?])(?:\s|$)/);
+  return match?.[1] ?? text;
+};
+
+const normalizePhrase = (value: string) =>
+  value.toLowerCase().replace(/[.!?]+$/, "").replace(/\s+/g, " ").trim();
+
+const phrasesOverlap = (left: string, right: string) => {
+  if (!left || !right) {
+    return false;
+  }
+  return left === right || left.includes(right) || right.includes(left);
+};
+
+const parseFieldMarks = (diagnostic?: string, description?: string, oneLiner?: string) => {
+  const source = diagnostic?.trim() || description?.trim();
+  if (!source) {
+    return [];
+  }
+
+  let remainder = source;
+  if (oneLiner) {
+    const openingMatch = source.match(/^(.+?[.!?])(?:\s|$)/);
+    if (openingMatch) {
+      remainder = source.slice(openingMatch[0].length).trim();
+    }
+  }
+
+  const segments = (remainder || source)
+    .split(/(?:;|\.\s+|\n+)/)
+    .flatMap((segment) => segment.split(/,\s+and\s+|,\s+(?=[A-Z])/))
+    .map((segment) => segment.replace(/^and\s+/i, "").replace(/^[,.;:\s]+/, "").trim())
+    .filter((segment) => segment.length >= 8);
+
+  const oneLinerNorm = oneLiner ? normalizePhrase(oneLiner) : "";
+
+  return unique(segments)
+    .filter((segment) => !phrasesOverlap(normalizePhrase(segment), oneLinerNorm))
+    .slice(0, 6);
+};
+
+const humanizeStatus = (
+  occurrenceStatus: string | undefined,
+  establishmentMeans: string | undefined,
+  endemic?: boolean
+) => {
+  const occurrence = occurrenceStatus?.toUpperCase();
+  const establishment = establishmentMeans?.toUpperCase();
+
+  if (occurrence === "ABSENT") {
+    return "Not recorded in Victoria";
+  }
+
+  const parts: string[] = [];
+
+  if (establishment === "NATIVE" || establishment === "INDIGENOUS") {
+    parts.push(endemic ? "Native and endemic to Victoria" : "Native to Victoria");
+  } else if (establishment === "NATURALISED" || establishment === "NATURALIZED") {
+    parts.push("Naturalised in Victoria");
+  } else if (establishment === "EXOTIC" || establishment === "INTRODUCED") {
+    parts.push("Introduced to Victoria");
+  } else if (establishment) {
+    parts.push(establishment.charAt(0) + establishment.slice(1).toLowerCase().replaceAll("_", " "));
+  }
+
+  if (occurrence === "PRESENT" && parts.length === 0) {
+    parts.push("Present in Victoria");
+  } else if (occurrence === "DOUBTFUL") {
+    parts.push("presence uncertain in Victoria");
+  } else if (occurrence && parts.length === 0) {
+    parts.push(`Recorded as ${occurrence.toLowerCase().replaceAll("_", " ")} in Victoria`);
+  }
+
+  return parts.length > 0 ? parts.join(", ") : "Status unavailable";
+};
+
+const mergeWhereText = (...parts: Array<string | undefined>) => {
+  const values = unique(parts);
+  if (values.length === 0) {
+    return undefined;
+  }
+  if (values.length === 1) {
+    return values[0];
+  }
+
+  const [first, second] = values;
+  if (first && second && (first.includes(second) || second.includes(first))) {
+    return first.length >= second.length ? first : second;
+  }
+
+  return values.join(" ");
+};
+
+const monthIndex = (month: string) => {
+  const normalized = month.trim().slice(0, 3).toLowerCase();
+  return MONTH_ORDER.findIndex((candidate) => candidate.toLowerCase() === normalized);
+};
+
+const formatMonthRange = (months: string[]) => {
+  const indices = [...new Set(months.map((month) => monthIndex(month)).filter((index) => index >= 0))].sort(
+    (left, right) => left - right
+  );
+
+  if (indices.length === 0) {
+    return undefined;
+  }
+  if (indices.length === 1) {
+    return MONTH_ORDER[indices[0]];
+  }
+
+  let maxGap = 0;
+  let gapAfter = -1;
+  for (let index = 0; index < indices.length; index += 1) {
+    const current = indices[index];
+    const next = index === indices.length - 1 ? indices[0] + 12 : indices[index + 1];
+    const gap = next - current;
+    if (gap > maxGap) {
+      maxGap = gap;
+      gapAfter = index;
+    }
+  }
+
+  if (maxGap > 1 && gapAfter >= 0) {
+    const start = indices[(gapAfter + 1) % indices.length];
+    const end = indices[gapAfter];
+    return `${MONTH_ORDER[start]}–${MONTH_ORDER[end]}`;
+  }
+
+  return `${MONTH_ORDER[indices[0]]}–${MONTH_ORDER[indices[indices.length - 1]]}`;
+};
+
+const formatPhenology = (
+  phenology: PlantProfile["phenology"],
+  phenologyText?: string
+) => {
+  if (phenologyText?.trim()) {
+    return phenologyText.trim();
+  }
+
+  const floweringMonths = phenology.filter((entry) => entry.flowers > 0).map((entry) => entry.month);
+  const fruitingMonths = phenology.filter((entry) => entry.fruit > 0).map((entry) => entry.month);
+  const buddingMonths = phenology.filter((entry) => entry.buds > 0).map((entry) => entry.month);
+
+  const parts: string[] = [];
+  const flowers = formatMonthRange(floweringMonths);
+  const fruit = formatMonthRange(fruitingMonths);
+  const buds = formatMonthRange(buddingMonths);
+
+  if (flowers) parts.push(`Flowers mainly ${flowers}`);
+  if (fruit) parts.push(`Fruit mainly ${fruit}`);
+  if (!flowers && buds) parts.push(`Buds mainly ${buds}`);
+
+  return parts.length > 0 ? parts.join(". ") : undefined;
+};
+
+const pickConfusionNotes = (taxonomicNotes?: string, vicNote?: string) => {
+  if (taxonomicNotes && CONFUSION_PATTERN.test(taxonomicNotes)) {
+    return taxonomicNotes;
+  }
+  if (vicNote && (CONFUSION_PATTERN.test(vicNote) || /\b(only|Victoria|subspecies)\b/i.test(vicNote))) {
+    return vicNote;
+  }
+  return undefined;
+};
+
+const classificationFamily = (
+  vicfloraClassification: TaxonSummary[],
+  alaTaxon: AlaTaxon | undefined
+) => {
+  const vicFamily = vicfloraClassification.find((taxon) => taxon.rank?.toUpperCase() === "FAMILY");
+  if (vicFamily?.scientificName) {
+    return vicFamily.scientificName;
+  }
+
+  return alaTaxon?.classification.find((taxon) => taxon.rank.toLowerCase() === "family")?.name;
+};
+
+const classificationGenus = (
+  scientificName: string,
+  vicfloraClassification: TaxonSummary[],
+  alaTaxon: AlaTaxon | undefined
+) => {
+  const vicGenus = vicfloraClassification.find((taxon) => taxon.rank?.toUpperCase() === "GENUS");
+  if (vicGenus?.scientificName) {
+    return vicGenus.scientificName;
+  }
+
+  const alaGenus = alaTaxon?.classification.find((taxon) => taxon.rank.toLowerCase() === "genus")?.name;
+  if (alaGenus) {
+    return alaGenus;
+  }
+
+  return scientificName.split(/\s+/)[0];
+};
+
+const groupLabelFromGenus = (genus?: string) => {
+  if (!genus) {
+    return undefined;
+  }
+  return GENUS_GROUP_LABELS[genus.toLowerCase()] ?? genus;
 };
 
 export class PlantLearningService {
@@ -283,48 +582,66 @@ export class PlantLearningService {
       alaTaxon?.commonNameSingle,
       ...(alaTaxon?.commonNames ?? []),
       attr(alaFloraProfile, "Common Name")?.split(",").map((name) => name.trim()).join("|")
-    ].flatMap((value) => value?.includes("|") ? value.split("|") : value));
+    ].flatMap((value) => value?.includes("|") ? value.split("|") : value))
+      .map(cleanCommonName)
+      .filter(isUsefulCommonName);
 
+    const diagnosticFeatures = attr(alaFloraProfile, "Diagnostic Features");
+    const description = attr(alaFloraProfile, "Description") ?? vicSections.description;
+    const oneLiner = openingSentence(diagnosticFeatures ?? description);
     const vicfloraImages = vicfloraProfile?.images ?? [];
     const heroImage = pickHeroImage(vicfloraImages, alaTaxon);
+    const gallery = orderGalleryWithHeroFirst(buildImageGallery(vicfloraImages), heroImage);
+    const family = classificationFamily(vicfloraProfile?.classification ?? [], alaTaxon);
+    const genus = classificationGenus(scientificName, vicfloraProfile?.classification ?? [], alaTaxon);
+    const conservation = attr(alaFloraProfile, "Conservation Status") ?? alaTaxon?.conservationStatus ?? undefined;
+    const displayName = vicfloraProfile?.taxon.preferredCommonName ??
+      alaTaxon?.commonNameSingle ??
+      commonNames[0] ??
+      scientificName;
 
     return {
       query: {
         name: input.name,
         region
       },
-      displayName: vicfloraProfile?.taxon.preferredCommonName ??
-        alaTaxon?.commonNameSingle ??
-        commonNames[0] ??
-        scientificName,
+      displayName,
       scientificName,
       scientificNameWithAuthorship,
-      commonNames,
-      heroImage,
-      imageGallery: orderGalleryWithHeroFirst(buildImageGallery(vicfloraImages), heroImage),
-      recognition: {
-        summary: firstSentence(attr(alaFloraProfile, "Diagnostic Features") ?? vicSections.description ?? attr(alaFloraProfile, "Description")),
-        diagnosticFeatures: attr(alaFloraProfile, "Diagnostic Features"),
-        description: attr(alaFloraProfile, "Description") ?? vicSections.description
+      family,
+      groupLabel: groupLabelFromGenus(genus),
+      spotIt: {
+        oneLiner,
+        fieldMarks: parseFieldMarks(diagnosticFeatures, description, oneLiner),
+        heroImage
       },
-      status: {
-        victorian: vicfloraProfile?.taxon.occurrenceStatus,
-        establishmentMeans: vicfloraProfile?.taxon.establishmentMeans,
-        degreeOfEstablishment: vicfloraProfile?.taxon.degreeOfEstablishment,
-        nationalBiostatus: attr(alaFloraProfile, "Biostatus"),
-        conservation: attr(alaFloraProfile, "Conservation Status") ?? alaTaxon?.conservationStatus ?? undefined
+      inVictoria: {
+        statusLabel: humanizeStatus(
+          vicfloraProfile?.taxon.occurrenceStatus,
+          vicfloraProfile?.taxon.establishmentMeans,
+          vicfloraProfile?.taxon.endemic
+        ),
+        where: mergeWhereText(vicSections.habitat, vicSections.distributionAustralia, attr(alaFloraProfile, "Habitat")),
+        when: formatPhenology(vicfloraProfile?.phenology ?? [], vicSections.phenology),
+        conservation: conservation ?? undefined
       },
-      distribution: {
-        victoria: vicSections.habitat,
-        national: attr(alaFloraProfile, "Distribution") ?? vicSections.distributionAustralia
+      detail: {
+        fullDescription: description,
+        nationalRange: attr(alaFloraProfile, "Distribution") ?? vicSections.distributionAustralia,
+        nationalHabitat: attr(alaFloraProfile, "Habitat"),
+        confusionNotes: pickConfusionNotes(attr(alaFloraProfile, "Taxonomic Notes"), vicSections.note)
       },
-      habitat: {
-        victoria: vicSections.habitat,
-        national: attr(alaFloraProfile, "Habitat")
+      media: {
+        gallery,
+        groups: groupGalleryImages(gallery)
       },
-      similarityNotes: attr(alaFloraProfile, "Taxonomic Notes") ?? vicSections.note,
-      sourceComparison: this.sourceComparison(vicfloraProfile, alaTaxon, alaFloraProfile),
-      citations: this.citations(vicfloraProfile, alaTaxon, alaFloraProfile),
+      naming: {
+        commonNames,
+        alsoKnownAs: curateAlsoKnownAs(commonNames, displayName, scientificName),
+        synonyms: unique((vicfloraProfile?.synonyms ?? []).map((synonym) => synonym.fullNameWithAuthorship ?? synonym.fullName))
+      },
+      references: this.references(vicfloraProfile, alaTaxon, alaFloraProfile),
+      sources: this.sourceComparison(vicfloraProfile, alaTaxon, alaFloraProfile),
       rawSources: {
         vicflora: vicfloraProfile,
         alaTaxon,
@@ -339,7 +656,7 @@ export class PlantLearningService {
     vicfloraProfile: PlantProfile | undefined,
     alaTaxon: AlaTaxon | undefined,
     alaFloraProfile: AlaFloraProfile | undefined
-  ): PlantLearningProfile["sourceComparison"] {
+  ): PlantLearningProfile["sources"] {
     return [
       {
         source: "VicFlora",
@@ -374,11 +691,11 @@ export class PlantLearningService {
     ];
   }
 
-  private citations(
+  private references(
     vicfloraProfile: PlantProfile | undefined,
     alaTaxon: AlaTaxon | undefined,
     alaFloraProfile: AlaFloraProfile | undefined
-  ): PlantLearningProfile["citations"] {
+  ): PlantLearningProfile["references"] {
     return [
       ...(vicfloraProfile?.references ?? []).map(citationFromReference),
       ...(alaTaxon ? [{

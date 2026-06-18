@@ -9,6 +9,8 @@ type PlantImage = {
   creator?: string;
   license?: string;
   focus?: string;
+  displayLabel?: string;
+  group?: "habit" | "flowers" | "fruit" | "details";
 };
 
 type PlantLearningProfile = {
@@ -16,31 +18,40 @@ type PlantLearningProfile = {
   displayName: string;
   scientificName: string;
   scientificNameWithAuthorship?: string;
-  commonNames: string[];
-  heroImage?: PlantImage;
-  imageGallery?: PlantImage[];
-  recognition: {
-    summary?: string;
-    diagnosticFeatures?: string;
-    description?: string;
+  family?: string;
+  groupLabel?: string;
+  spotIt: {
+    oneLiner?: string;
+    fieldMarks: string[];
+    heroImage?: PlantImage;
   };
-  status: {
-    victorian?: string;
-    establishmentMeans?: string;
-    degreeOfEstablishment?: string;
-    nationalBiostatus?: string;
+  inVictoria: {
+    statusLabel: string;
+    where?: string;
+    when?: string;
     conservation?: string;
   };
-  distribution?: {
-    victoria?: string;
-    national?: string;
+  detail: {
+    fullDescription?: string;
+    nationalRange?: string;
+    nationalHabitat?: string;
+    confusionNotes?: string;
   };
-  habitat?: {
-    victoria?: string;
-    national?: string;
+  media: {
+    gallery: PlantImage[];
+    groups?: {
+      habit: PlantImage[];
+      flowers: PlantImage[];
+      fruit: PlantImage[];
+      details: PlantImage[];
+    };
   };
-  similarityNotes?: string;
-  sourceComparison: Array<{
+  naming: {
+    commonNames: string[];
+    alsoKnownAs: string[];
+    synonyms?: string[];
+  };
+  sources: Array<{
     source: string;
     role: string;
     present: boolean;
@@ -48,13 +59,10 @@ type PlantLearningProfile = {
     url?: string;
     iconUrl?: string;
   }>;
-  citations: Array<{
-    label: string;
-    source: string;
-    url?: string;
-  }>;
   warnings: string[];
 };
+
+type ImageGroupKey = NonNullable<PlantImage["group"]>;
 
 type ToolResult = {
   structuredContent?: {
@@ -71,119 +79,162 @@ type AppBridge = {
   getHostContext?: () => { theme?: "light" | "dark" } | undefined;
 };
 
-const sampleProfiles: Record<string, PlantLearningProfile> = {
-  "eucalyptus camaldulensis": {
-    query: { name: "Eucalyptus camaldulensis", region: "VIC" },
-    displayName: "River Red-gum",
-    scientificName: "Eucalyptus camaldulensis",
-    scientificNameWithAuthorship: "Eucalyptus camaldulensis Dehnh.",
-    commonNames: ["River Red-gum", "Red Gum", "River Red Gum", "Murray Red Gum"],
-    recognition: {
-      summary: "A smooth-barked tree along streams with cuboid-pyramidal seeds.",
-      diagnosticFeatures: "Smooth mottled bark, long narrow adult leaves, white flowers, hemispherical fruit, and cuboid-pyramidal yellow-brown seeds.",
-      description: "Tree commonly to 20 m high, occasionally taller. Bark smooth throughout, white, grey, brown or red. Adult leaves lanceolate to narrowly lanceolate.",
-    },
-    status: {
-      victorian: "PRESENT",
-      establishmentMeans: "NATIVE",
-      degreeOfEstablishment: "NATIVE",
-      nationalBiostatus: "Native."
-    },
-    distribution: {
-      victoria: "Widespread along rivers in Victoria.",
-      national: "Occurs in every mainland State."
-    },
-    habitat: {
-      victoria: "Widespread along rivers in Victoria.",
-      national: "Grows along and near watercourses, whether permanent or intermittent."
-    },
-    similarityNotes: "Only the type subspecies occurs in Victoria; national treatments recognise several subspecies across Australia.",
-    sourceComparison: [
-      {
-        source: "VicFlora",
-        role: "Victorian authority",
-        present: true,
-        summary: "Provides Victorian taxon concept, local status, profile text, phenology, images, and references.",
-        url: "https://vicflora.rbg.vic.gov.au/flora/taxon/b81ef7c6-89a0-45d7-9b2b-cebb16c7033a"
-      },
-      {
-        source: "ALA BIE",
-        role: "National taxon identity",
-        present: true,
-        summary: "Provides APC-backed accepted taxon metadata, common names, identifiers, image pointers, and occurrence count.",
-        url: "https://bie.ala.org.au/species/Eucalyptus+camaldulensis"
-      },
-      {
-        source: "ALA Flora of Australia",
-        role: "National authored treatment",
-        present: true,
-        summary: "Provides structured national flora attributes such as description, diagnostic features, distribution, habitat, and bibliography.",
-        url: "https://profiles.ala.org.au/opus/foa/profile/Eucalyptus%20camaldulensis"
-      }
-    ],
-    citations: [
-      {
-        label: "VicFlora",
-        source: "Taxon profile.",
-        url: "https://vicflora.rbg.vic.gov.au/flora/taxon/b81ef7c6-89a0-45d7-9b2b-cebb16c7033a"
-      },
-      {
-        label: "Flora of Australia",
-        source: "Species profile.",
-        url: "https://profiles.ala.org.au/opus/foa/profile/Eucalyptus%20camaldulensis"
-      }
-    ],
-    warnings: ["Preview mode uses bundled sample data."]
+const GROUP_LABELS: Record<ImageGroupKey, string> = {
+  habit: "Whole plant",
+  flowers: "Flowers",
+  fruit: "Fruit or seeds",
+  details: "Close-up detail"
+};
+
+const sampleGallery: PlantImage[] = [
+  {
+    url: "",
+    displayLabel: "Whole plant",
+    group: "habit",
+    caption: "Mature tree beside a watercourse."
   },
-  "acacia pycnantha": {
-    query: { name: "Acacia pycnantha", region: "VIC" },
-    displayName: "Golden Wattle",
-    scientificName: "Acacia pycnantha",
-    scientificNameWithAuthorship: "Acacia pycnantha Benth.",
-    commonNames: ["Golden Wattle"],
+  {
+    url: "",
+    displayLabel: "Flowers",
+    group: "flowers",
+    caption: "White flowers in branch clusters."
+  }
+];
+
+const riverRedGumProfile = (): PlantLearningProfile => ({
+  query: { name: "Eucalyptus camaldulensis", region: "VIC" },
+  displayName: "River Red-gum",
+  scientificName: "Eucalyptus camaldulensis",
+  scientificNameWithAuthorship: "Eucalyptus camaldulensis Dehnh.",
+  family: "Myrtaceae",
+  groupLabel: "Eucalypt",
+  spotIt: {
+    oneLiner: "A smooth-barked tree along streams with cuboid-pyramidal seeds.",
+    fieldMarks: [
+      "Smooth mottled bark",
+      "Long narrow adult leaves",
+      "White flowers",
+      "Hemispherical fruit with cuboid-pyramidal seeds"
+    ],
+    heroImage: sampleGallery[0]
+  },
+  inVictoria: {
+    statusLabel: "Native to Victoria",
+    where: "Widespread along rivers and floodplains in Victoria.",
+    when: "Flowers summer.",
+    conservation: undefined
+  },
+  detail: {
+    fullDescription: "Tree commonly to 20 m high, occasionally taller. Bark smooth throughout, white, grey, brown or red.",
+    nationalRange: "Occurs in every mainland State.",
+    nationalHabitat: "Grows along and near watercourses, whether permanent or intermittent.",
+    confusionNotes: "Only the type subspecies occurs in Victoria; national treatments recognise several subspecies across Australia."
+  },
+  media: {
+    gallery: sampleGallery,
+    groups: {
+      habit: [sampleGallery[0]],
+      flowers: [sampleGallery[1]],
+      fruit: [],
+      details: []
+    }
+  },
+  naming: {
+    commonNames: ["River Red-gum", "Red Gum", "River Red Gum", "Murray Red Gum"],
+    alsoKnownAs: ["Red Gum", "River Red Gum", "Murray Red Gum"]
+  },
+  sources: [
+    {
+      source: "VicFlora",
+      role: "Victorian authority",
+      present: true,
+      summary: "Provides Victorian taxon concept, local status, profile text, phenology, images, and references.",
+      url: "https://vicflora.rbg.vic.gov.au/flora/taxon/b81ef7c6-89a0-45d7-9b2b-cebb16c7033a"
+    },
+    {
+      source: "ALA BIE",
+      role: "National taxon identity",
+      present: true,
+      summary: "Provides APC-backed accepted taxon metadata, common names, identifiers, image pointers, and occurrence count.",
+      url: "https://bie.ala.org.au/species/Eucalyptus+camaldulensis"
+    },
+    {
+      source: "ALA Flora of Australia",
+      role: "National authored treatment",
+      present: true,
+      summary: "Provides structured national flora attributes such as description, diagnostic features, distribution, habitat, and bibliography.",
+      url: "https://profiles.ala.org.au/opus/foa/profile/Eucalyptus%20camaldulensis"
+    }
+  ],
+  warnings: ["Preview mode uses bundled sample data."]
+});
+
+const goldenWattleProfile = (): PlantLearningProfile => ({
+  query: { name: "Acacia pycnantha", region: "VIC" },
+  displayName: "Golden Wattle",
+  scientificName: "Acacia pycnantha",
+  scientificNameWithAuthorship: "Acacia pycnantha Benth.",
+  family: "Fabaceae",
+  groupLabel: "Wattle",
+  spotIt: {
+    oneLiner: "A shrub or small tree with broad sickle-shaped phyllodes and bright yellow flower heads.",
+    fieldMarks: [
+      "Broad flattened phyllodes",
+      "Masses of golden globular flower heads",
+      "Spring flowering pulse"
+    ],
     heroImage: {
       url: "",
-      caption: "Golden Wattle image area"
-    },
-    recognition: {
-      summary: "A shrub or small tree with broad sickle-shaped phyllodes and bright yellow flower heads.",
-      diagnosticFeatures: "Broad flattened phyllodes, masses of golden globular flower heads, and a spring flowering pulse.",
-      description: "Shrub or small tree with leathery green phyllodes and showy yellow inflorescences."
-    },
-    status: {
-      victorian: "PRESENT",
-      establishmentMeans: "NATIVE",
-      degreeOfEstablishment: "NATIVE",
-      nationalBiostatus: "Native."
-    },
-    distribution: {
-      victoria: "Common in dry forests and woodlands.",
-      national: "Native to south-eastern Australia."
-    },
-    habitat: {
-      victoria: "Often found in open forest, woodland, and disturbed sunny sites.",
-      national: "Dry sclerophyll forest and woodland."
-    },
-    similarityNotes: "Compare with other wattles by phyllode shape, flower arrangement, and pod characters.",
-    sourceComparison: [
-      { source: "VicFlora", role: "Victorian authority", present: true, summary: "Provides local profile and status.", url: "https://vicflora.rbg.vic.gov.au/" },
-      { source: "ALA BIE", role: "National taxon identity", present: true, summary: "Provides accepted name and common names.", url: "https://bie.ala.org.au/" },
-      { source: "ALA Flora of Australia", role: "National authored treatment", present: false, summary: "No preview profile loaded for this sample." }
-    ],
-    citations: [
-      { label: "VicFlora", source: "VicFlora taxon profile" }
-    ],
-    warnings: ["Preview mode uses bundled sample data."]
-  }
+      displayLabel: "Whole plant",
+      group: "habit",
+      caption: "Golden Wattle in flower."
+    }
+  },
+  inVictoria: {
+    statusLabel: "Native to Victoria",
+    where: "Common in dry forests and woodlands.",
+    when: "Flowers mainly Aug–Oct.",
+    conservation: undefined
+  },
+  detail: {
+    fullDescription: "Shrub or small tree with leathery green phyllodes and showy yellow inflorescences.",
+    nationalRange: "Native to south-eastern Australia.",
+    nationalHabitat: "Dry sclerophyll forest and woodland.",
+    confusionNotes: "Compare with other wattles by phyllode shape, flower arrangement, and pod characters."
+  },
+  media: {
+    gallery: [],
+    groups: {
+      habit: [],
+      flowers: [],
+      fruit: [],
+      details: []
+    }
+  },
+  naming: {
+    commonNames: ["Golden Wattle"],
+    alsoKnownAs: []
+  },
+  sources: [
+    { source: "VicFlora", role: "Victorian authority", present: true, summary: "Provides local profile and status.", url: "https://vicflora.rbg.vic.gov.au/" },
+    { source: "ALA BIE", role: "National taxon identity", present: true, summary: "Provides accepted name and common names.", url: "https://bie.ala.org.au/" },
+    { source: "ALA Flora of Australia", role: "National authored treatment", present: false, summary: "No preview profile loaded for this sample." }
+  ],
+  warnings: ["Preview mode uses bundled sample data."]
+});
+
+const sampleProfiles: Record<string, PlantLearningProfile> = {
+  "eucalyptus camaldulensis": riverRedGumProfile(),
+  "acacia pycnantha": goldenWattleProfile()
 };
 
 const fallbackProfile = (name: string): PlantLearningProfile => ({
-  ...sampleProfiles["eucalyptus camaldulensis"],
+  ...riverRedGumProfile(),
   query: { name, region: "VIC" },
   displayName: name,
   scientificName: name,
   scientificNameWithAuthorship: undefined,
-  commonNames: [],
+  naming: { commonNames: [], alsoKnownAs: [] },
   warnings: [`Preview mode has no bundled sample for "${name}".`]
 });
 
@@ -210,8 +261,8 @@ const createBridge = (): AppBridge => {
     connect() {
       queueMicrotask(() => {
         this.ontoolresult?.({
-          structuredContent: { profile: sampleProfiles["eucalyptus camaldulensis"] },
-          content: [{ type: "text", text: JSON.stringify({ profile: sampleProfiles["eucalyptus camaldulensis"] }, null, 2) }]
+          structuredContent: { profile: riverRedGumProfile() },
+          content: [{ type: "text", text: JSON.stringify({ profile: riverRedGumProfile() }, null, 2) }]
         });
       });
     }
@@ -240,31 +291,23 @@ if (app instanceof App) {
 }
 
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-const text = (id: string, value: string | undefined, fallback = "No data available yet.") => {
+const text = (id: string, value: string | undefined, fallback = "") => {
   byId(id).textContent = value?.trim() || fallback;
 };
 
 let galleryImages: PlantImage[] = [];
 let gallerySelectedIndex = 0;
 let galleryInteractionsReady = false;
+let activeGalleryGroup: ImageGroupKey | "all" = "all";
 
 const joinParts = (parts: Array<string | undefined>) => parts.filter(Boolean).join(" | ");
 
-const MAX_THUMB_LABEL = 40;
-
-const galleryThumbLabel = (image: PlantImage, index: number) => {
-  const candidate = image.focus?.trim() || image.caption?.trim();
-  if (!candidate) return `Photo ${index + 1}`;
-  if (candidate.length <= MAX_THUMB_LABEL) return candidate;
-  return `${candidate.slice(0, MAX_THUMB_LABEL - 1)}…`;
-};
-
-const galleryTitle = (image: PlantImage) => image.focus?.trim() || "Photo";
+const galleryTitle = (image: PlantImage) => image.displayLabel?.trim() || image.caption?.trim() || "Photo";
 
 const imageProxyPath = (profile: PlantLearningProfile) => {
   const urls = [
-    profile.heroImage?.url,
-    ...(profile.imageGallery?.map((image) => image.url) ?? [])
+    profile.spotIt.heroImage?.url,
+    ...profile.media.gallery.map((image) => image.url)
   ].filter(Boolean) as string[];
 
   for (const url of urls) {
@@ -283,7 +326,7 @@ const imageProxyPath = (profile: PlantLearningProfile) => {
 
 const attachSourceIcon = (
   row: HTMLElement,
-  entry: PlantLearningProfile["sourceComparison"][number],
+  entry: PlantLearningProfile["sources"][number],
   proxyPath?: string
 ) => {
   const candidates = [
@@ -317,14 +360,25 @@ const attachSourceIcon = (
   tryNext();
 };
 
-const renderScientificName = (profile: PlantLearningProfile) => {
-  text("scientific-name", profile.scientificName, "");
+const renderHero = (profile: PlantLearningProfile) => {
+  const scientificLine = profile.scientificNameWithAuthorship?.trim() || profile.scientificName;
+  text("scientific-name", scientificLine);
 
-  const fullName = profile.scientificNameWithAuthorship?.trim();
-  const authorship = fullName?.startsWith(profile.scientificName)
-    ? fullName.slice(profile.scientificName.length).trim()
-    : "";
-  text("scientific-authorship", authorship, "");
+  const commonName = profile.displayName.trim();
+  const showCommonName = commonName.toLowerCase() !== profile.scientificName.toLowerCase();
+  setOptionalText("common-name", showCommonName ? commonName : undefined);
+
+  const aliases = profile.naming.alsoKnownAs;
+  setOptionalText(
+    "hero-aliases",
+    aliases.length > 0 ? `Also known as ${aliases.join(", ")}` : undefined
+  );
+
+  const metaParts = [profile.inVictoria.statusLabel];
+  if (profile.family) {
+    metaParts.push(profile.family);
+  }
+  setOptionalText("hero-meta", metaParts.filter(Boolean).join(" · "));
 };
 
 const setCardReady = (ready: boolean) => {
@@ -380,6 +434,19 @@ const updateGalleryNav = (index: number, total: number) => {
   }
 };
 
+const imagesForActiveGroup = (profile: PlantLearningProfile) => {
+  if (activeGalleryGroup === "all" || !profile.media.groups) {
+    return profile.media.gallery.length
+      ? profile.media.gallery
+      : profile.spotIt.heroImage?.url
+        ? [profile.spotIt.heroImage]
+        : [];
+  }
+
+  const grouped = profile.media.groups[activeGalleryGroup];
+  return grouped.length > 0 ? grouped : profile.media.gallery;
+};
+
 const selectGalleryIndex = (index: number) => {
   if (galleryImages.length === 0) {
     return;
@@ -394,20 +461,32 @@ const renderGalleryImage = (image: PlantImage, images: PlantImage[], index: numb
   const frame = byId("gallery-frame");
   frame.replaceChildren();
 
-  const photo = document.createElement("img");
-  photo.src = image.url;
-  photo.alt = image.caption ?? image.focus ?? "Plant photo";
-  frame.append(photo);
+  if (image.url) {
+    const photo = document.createElement("img");
+    photo.src = image.url;
+    photo.alt = image.caption ?? image.displayLabel ?? "Plant photo";
+    frame.append(photo);
+  }
 
-  text("gallery-title", galleryTitle(image));
-  text("gallery-caption", image.caption);
+  const label = galleryTitle(image);
+  const caption = image.caption?.trim();
+  const labelElement = byId("gallery-figure-label");
+  if (label && label !== caption && label !== "Photo") {
+    labelElement.hidden = false;
+    labelElement.textContent = label;
+  } else {
+    labelElement.hidden = true;
+    labelElement.textContent = "";
+  }
+
+  text("gallery-caption", caption);
   text(
     "gallery-credit",
     joinParts([
       image.creator && `Photo: ${image.creator}`,
       image.license
     ]),
-    "Photo credit unavailable."
+    image.url ? "Photo credit unavailable." : ""
   );
 
   const source = byId<HTMLAnchorElement>("gallery-source");
@@ -474,58 +553,148 @@ const setupGalleryInteractions = () => {
       selectGalleryIndex(galleryImages.length - 1);
     }
   });
-
-  byId("gallery-thumbnails").addEventListener("keydown", (event) => {
-    if (byId("gallery-viewer").hidden || galleryImages.length === 0) {
-      return;
-    }
-
-    const target = event.target;
-    if (!(target instanceof HTMLButtonElement) || !target.classList.contains("gallery-thumb")) {
-      return;
-    }
-
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      selectGalleryIndex(gallerySelectedIndex - 1);
-      filmstripFocusSelected();
-      return;
-    }
-
-    if (event.key === "ArrowRight") {
-      event.preventDefault();
-      selectGalleryIndex(gallerySelectedIndex + 1);
-      filmstripFocusSelected();
-      return;
-    }
-
-    if (event.key === "Home") {
-      event.preventDefault();
-      selectGalleryIndex(0);
-      filmstripFocusSelected();
-      return;
-    }
-
-    if (event.key === "End") {
-      event.preventDefault();
-      selectGalleryIndex(galleryImages.length - 1);
-      filmstripFocusSelected();
-    }
-  });
 };
 
-const filmstripFocusSelected = () => {
-  const selected = byId("gallery-thumbnails").querySelector<HTMLButtonElement>(
-    ".gallery-thumb[aria-selected='true']"
-  );
-  selected?.focus();
+const renderGalleryGroupTabs = (profile: PlantLearningProfile) => {
+  const tabs = byId("gallery-group-tabs");
+  tabs.replaceChildren();
+
+  const groups = profile.media.groups;
+  if (!groups) {
+    tabs.hidden = true;
+    tabs.removeAttribute("role");
+    return;
+  }
+
+  const available = (Object.keys(GROUP_LABELS) as ImageGroupKey[]).filter((key) => groups[key].length > 0);
+  if (available.length <= 1) {
+    tabs.hidden = true;
+    tabs.removeAttribute("role");
+    return;
+  }
+
+  tabs.hidden = false;
+  tabs.setAttribute("role", "tablist");
+
+  const addTab = (key: ImageGroupKey | "all", label: string, count?: number) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "gallery-group-tab";
+    button.role = "tab";
+    button.setAttribute("aria-selected", String(activeGalleryGroup === key));
+    button.textContent = count === undefined ? label : `${label} (${count})`;
+    button.addEventListener("click", () => {
+      activeGalleryGroup = key;
+      renderGallery(profile);
+    });
+    tabs.append(button);
+  };
+
+  addTab("all", "All photos", profile.media.gallery.length);
+  for (const key of available) {
+    addTab(key, GROUP_LABELS[key], groups[key].length);
+  }
+};
+
+const renderGallery = (profile: PlantLearningProfile) => {
+  setupGalleryInteractions();
+  renderGalleryGroupTabs(profile);
+
+  const filmstrip = byId("gallery-thumbnails");
+  filmstrip.replaceChildren();
+
+  const images = imagesForActiveGroup(profile).filter((image) => image.url);
+  galleryImages = images;
+  gallerySelectedIndex = 0;
+  const viewer = byId("gallery-viewer");
+
+  if (images.length === 0) {
+    viewer.hidden = true;
+    byId("gallery-frame").replaceChildren();
+    byId("gallery-figure-label").hidden = true;
+    text("gallery-caption", undefined, "No photos returned yet.");
+    text("gallery-credit", undefined, "");
+    byId("gallery-counter").hidden = true;
+    byId<HTMLAnchorElement>("gallery-source").hidden = true;
+    byId<HTMLButtonElement>("gallery-prev").hidden = true;
+    byId<HTMLButtonElement>("gallery-next").hidden = true;
+    byId("gallery-announce").textContent = "";
+    return;
+  }
+
+  viewer.hidden = false;
+
+  const showFilmstrip = images.length > 3;
+  filmstrip.hidden = !showFilmstrip;
+  if (showFilmstrip) {
+    filmstrip.setAttribute("role", "tablist");
+  } else {
+    filmstrip.removeAttribute("role");
+  }
+
+  if (showFilmstrip) {
+    for (const [index, image] of images.entries()) {
+      const button = document.createElement("button");
+      button.className = "gallery-thumb";
+      button.type = "button";
+      button.role = "tab";
+      button.setAttribute("aria-selected", String(index === 0));
+      button.setAttribute("tabindex", index === 0 ? "0" : "-1");
+      button.setAttribute("aria-label", galleryTitle(image));
+
+      const thumbnail = document.createElement("img");
+      thumbnail.src = image.url;
+      thumbnail.alt = "";
+
+      button.append(thumbnail);
+      button.addEventListener("click", () => selectGalleryIndex(index));
+      filmstrip.append(button);
+    }
+  }
+
+  renderGalleryImage(images[0], images, 0);
+};
+
+const renderFieldMarks = (marks: string[]) => {
+  const list = byId<HTMLUListElement>("field-marks");
+  list.replaceChildren();
+
+  if (marks.length === 0) {
+    list.hidden = true;
+    return;
+  }
+
+  list.hidden = false;
+  for (const mark of marks) {
+    const item = document.createElement("li");
+    item.textContent = mark;
+    list.append(item);
+  }
+};
+
+const renderWarnings = (warnings: string[]) => {
+  const banner = byId("warnings-banner");
+  const list = byId<HTMLUListElement>("warnings-list");
+  list.replaceChildren();
+
+  if (warnings.length === 0) {
+    banner.hidden = true;
+    return;
+  }
+
+  banner.hidden = false;
+  for (const warning of warnings) {
+    const item = document.createElement("li");
+    item.textContent = warning;
+    list.append(item);
+  }
 };
 
 const renderSourceComparison = (profile: PlantLearningProfile) => {
   const list = byId<HTMLUListElement>("source-comparison");
   list.replaceChildren();
 
-  const cited = profile.sourceComparison.filter((entry) => entry.present);
+  const cited = profile.sources.filter((entry) => entry.present);
   const proxyPath = imageProxyPath(profile);
 
   for (const entry of cited) {
@@ -558,93 +727,74 @@ const renderSourceComparison = (profile: PlantLearningProfile) => {
 
   if (cited.length === 0) {
     const item = document.createElement("li");
-    item.className = "source-empty";
+    item.className = "empty-note";
     item.textContent = "No sources cited.";
     list.append(item);
   }
 };
 
-const renderGallery = (profile: PlantLearningProfile) => {
-  setupGalleryInteractions();
-
-  const filmstrip = byId("gallery-thumbnails");
-  filmstrip.replaceChildren();
-
-  const images = profile.imageGallery?.length
-    ? profile.imageGallery
-    : profile.heroImage?.url
-      ? [profile.heroImage]
-      : [];
-
-  galleryImages = images;
-  gallerySelectedIndex = 0;
-  const viewer = byId("gallery-viewer");
-
-  if (images.length === 0) {
-    viewer.hidden = true;
-    byId("gallery-frame").replaceChildren();
-    text("gallery-title", "Photos");
-    text("gallery-caption", undefined, "No photos returned yet.");
-    text("gallery-credit", undefined, "");
-    byId("gallery-counter").hidden = true;
-    byId<HTMLAnchorElement>("gallery-source").hidden = true;
-    byId<HTMLButtonElement>("gallery-prev").hidden = true;
-    byId<HTMLButtonElement>("gallery-next").hidden = true;
-    byId("gallery-announce").textContent = "";
+const setOptionalText = (id: string, value?: string) => {
+  const element = byId(id);
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    element.hidden = true;
+    element.textContent = "";
     return;
   }
+  element.hidden = false;
+  element.textContent = trimmed;
+};
 
-  viewer.hidden = false;
-
-  for (const [index, image] of images.entries()) {
-    const button = document.createElement("button");
-    button.className = "gallery-thumb";
-    button.type = "button";
-    button.role = "tab";
-    button.setAttribute("aria-selected", String(index === 0));
-    button.setAttribute("tabindex", index === 0 ? "0" : "-1");
-    button.setAttribute("aria-label", galleryThumbLabel(image, index));
-
-    const thumbnail = document.createElement("img");
-    thumbnail.src = image.url;
-    thumbnail.alt = "";
-
-    button.append(thumbnail);
-    button.addEventListener("click", () => selectGalleryIndex(index));
-    filmstrip.append(button);
-  }
-
-  renderGalleryImage(images[0], images, 0);
+const setOptionalBlock = (blockId: string, value: string | undefined) => {
+  const block = byId(blockId);
+  const hasValue = Boolean(value?.trim());
+  block.hidden = !hasValue;
+  return hasValue ? value!.trim() : "";
 };
 
 const renderProfile = (profile: PlantLearningProfile) => {
-  text("display-name", profile.displayName);
-  renderScientificName(profile);
-  text(
-    "status-line",
-    joinParts([
-      profile.status.victorian && `Victoria: ${profile.status.victorian}`,
-      profile.status.establishmentMeans,
-      profile.status.nationalBiostatus && `National: ${profile.status.nationalBiostatus}`
-    ]),
-    "Status not available."
-  );
+  activeGalleryGroup = "all";
+
+  renderHero(profile);
+
+  renderWarnings(profile.warnings);
+
+  setOptionalText("spot-one-liner", profile.spotIt.oneLiner);
+  renderFieldMarks(profile.spotIt.fieldMarks);
+  byId("spot-it-section").hidden =
+    byId("spot-one-liner").hidden && byId("field-marks").hidden;
 
   renderGallery(profile);
-  text("summary", profile.recognition.summary);
-  text("habitat", joinParts([
-    profile.habitat?.victoria && `Victoria: ${profile.habitat.victoria}`,
-    profile.habitat?.national && `National: ${profile.habitat.national}`
-  ]));
-  text("distribution", joinParts([
-    profile.distribution?.victoria && `Victoria: ${profile.distribution.victoria}`,
-    profile.distribution?.national && `National: ${profile.distribution.national}`
-  ]));
-  text("common-names", profile.commonNames.join(", "), "No common names returned.");
-  text("diagnostic", profile.recognition.diagnosticFeatures);
-  text("description", profile.recognition.description);
-  text("similarity", profile.similarityNotes);
+
+  setOptionalText("in-victoria-where", profile.inVictoria.where);
+  setOptionalText("in-victoria-when", profile.inVictoria.when);
+  setOptionalText("in-victoria-conservation", profile.inVictoria.conservation);
+  byId("in-victoria-section").hidden = ["in-victoria-where", "in-victoria-when", "in-victoria-conservation"]
+    .every((id) => byId(id).hidden);
+
+  const nationalRange = setOptionalBlock("national-range-block", profile.detail.nationalRange);
+  text("national-range", nationalRange);
+  const nationalHabitat = setOptionalBlock("national-habitat-block", profile.detail.nationalHabitat);
+  text("national-habitat", nationalHabitat);
+  const confusion = setOptionalBlock("confusion-block", profile.detail.confusionNotes);
+  text("confusion-notes", confusion);
+  setOptionalBlock("description-block", profile.detail.fullDescription);
+  text("full-description", profile.detail.fullDescription);
+
+  const detailSection = byId("detail-section");
+  const hasDetailContent = [
+    profile.detail.fullDescription,
+    profile.detail.nationalRange,
+    profile.detail.nationalHabitat,
+    profile.detail.confusionNotes
+  ].some((value) => Boolean(value?.trim()));
+  detailSection.hidden = !hasDetailContent;
+
   renderSourceComparison(profile);
+
+  byId("sources-section").hidden = profile.sources.every((entry) => !entry.present);
+  byId("card-disclosures").hidden = byId("sources-section").hidden;
+
   setCardReady(true);
 };
 

@@ -36,35 +36,68 @@ const riverRedGum: PlantLearningProfile = {
   displayName: "River Red-gum",
   scientificName: "Eucalyptus camaldulensis",
   scientificNameWithAuthorship: "Eucalyptus camaldulensis Dehnh.",
-  commonNames: ["River Red-gum", "Red Gum", "River Red Gum", "Murray Red Gum"],
-  recognition: {
-    summary: "A smooth-barked tree of waterways, with long narrow leaves and small clustered white flowers.",
-    diagnosticFeatures: "Smooth mottled bark, lance-shaped adult leaves, hemispherical fruit, and cuboid-pyramidal seeds.",
-    description: "A large tree, commonly to 20 metres, with smooth white, grey, brown, or red bark."
+  family: "Myrtaceae",
+  groupLabel: "Eucalypt",
+  spotIt: {
+    oneLiner: "A smooth-barked tree of waterways, with long narrow leaves and small clustered white flowers.",
+    fieldMarks: [
+      "Smooth mottled bark",
+      "Lance-shaped adult leaves",
+      "Hemispherical fruit",
+      "Cuboid-pyramidal seeds"
+    ],
+    heroImage: {
+      url: "http://localhost:3000/images/vicflora?url=https%3A%2F%2Fexample.test%2Fhabit.jpg",
+      displayLabel: "Whole plant",
+      group: "habit",
+      caption: "Mature tree beside a watercourse."
+    }
   },
-  status: {
-    victorian: "PRESENT",
-    establishmentMeans: "NATIVE",
-    degreeOfEstablishment: "NATIVE",
-    nationalBiostatus: "Native."
+  inVictoria: {
+    statusLabel: "Native to Victoria",
+    where: "Widespread along rivers and floodplains in Victoria.",
+    when: "Flowers summer."
   },
-  distribution: {
-    victoria: "Widespread along rivers and floodplains in Victoria.",
-    national: "Occurs in every mainland state and territory."
+  detail: {
+    fullDescription: "A large tree, commonly to 20 metres, with smooth white, grey, brown, or red bark.",
+    nationalRange: "Occurs in every mainland state and territory.",
+    nationalHabitat: "Along permanent and intermittent watercourses.",
+    confusionNotes: "Only the type subspecies occurs naturally in Victoria; national treatments recognise several subspecies."
   },
-  habitat: {
-    victoria: "Watercourses, floodplains, and seasonally inundated country.",
-    national: "Along permanent and intermittent watercourses."
+  media: {
+    gallery: [
+      {
+        url: "http://localhost:3000/images/vicflora?url=https%3A%2F%2Fexample.test%2Fhabit.jpg",
+        displayLabel: "Whole plant",
+        group: "habit",
+        caption: "Mature tree beside a watercourse."
+      }
+    ],
+    groups: {
+      habit: [
+        {
+          url: "http://localhost:3000/images/vicflora?url=https%3A%2F%2Fexample.test%2Fhabit.jpg",
+          displayLabel: "Whole plant",
+          group: "habit"
+        }
+      ],
+      flowers: [],
+      fruit: [],
+      details: []
+    }
   },
-  similarityNotes: "Only the type subspecies occurs naturally in Victoria; national treatments recognise several subspecies.",
-  sourceComparison: [
+  naming: {
+    commonNames: ["River Red-gum", "Red Gum", "River Red Gum", "Murray Red Gum"],
+    alsoKnownAs: ["Red Gum", "River Red Gum", "Murray Red Gum"]
+  },
+  references: [
+    { label: "VicFlora", source: "Taxon profile", url: "https://vicflora.rbg.vic.gov.au/flora/taxon/b81ef7c6-89a0-45d7-9b2b-cebb16c7033a" },
+    { label: "Flora of Australia", source: "Species profile", url: "https://profiles.ala.org.au/opus/foa/profile/Eucalyptus%20camaldulensis" }
+  ],
+  sources: [
     { source: "VicFlora", role: "Victorian authority", present: true, summary: "Local status, description, and references." },
     { source: "ALA BIE", role: "National taxon identity", present: true, summary: "Accepted identity and common names." },
     { source: "ALA Flora of Australia", role: "National authored treatment", present: true, summary: "National diagnostic and habitat attributes." }
-  ],
-  citations: [
-    { label: "VicFlora", source: "Taxon profile", url: "https://vicflora.rbg.vic.gov.au/flora/taxon/b81ef7c6-89a0-45d7-9b2b-cebb16c7033a" },
-    { label: "Flora of Australia", source: "Species profile", url: "https://profiles.ala.org.au/opus/foa/profile/Eucalyptus%20camaldulensis" }
   ],
   rawSources: {},
   metadata,
@@ -76,33 +109,148 @@ const goldenWattle: PlantLearningProfile = {
   displayName: "Golden Wattle",
   scientificName: "Acacia pycnantha",
   scientificNameWithAuthorship: "Acacia pycnantha Benth.",
-  commonNames: ["Golden Wattle"],
-  recognition: {
-    summary: "A shrub or small tree with curved phyllodes and masses of golden flower heads.",
-    diagnosticFeatures: "Broad sickle-shaped phyllodes, globular bright-yellow flower heads, and flattened pods.",
-    description: "A spreading shrub or small tree with leathery green phyllodes and showy spring flowers."
+  family: "Fabaceae",
+  groupLabel: "Wattle",
+  spotIt: {
+    oneLiner: "A shrub or small tree with curved phyllodes and masses of golden flower heads.",
+    fieldMarks: [
+      "Broad sickle-shaped phyllodes",
+      "Globular bright-yellow flower heads",
+      "Flattened pods"
+    ]
   },
-  status: {
-    victorian: "PRESENT",
-    establishmentMeans: "NATIVE",
-    degreeOfEstablishment: "NATIVE",
-    nationalBiostatus: "Native."
+  inVictoria: {
+    statusLabel: "Native to Victoria",
+    where: "Widespread in central and western Victoria.",
+    when: "Flowers mainly Aug–Oct."
   },
-  distribution: {
-    victoria: "Widespread in central and western Victoria.",
-    national: "Native to south-eastern Australia."
+  detail: {
+    fullDescription: "A spreading shrub or small tree with leathery green phyllodes and showy spring flowers.",
+    nationalRange: "Native to south-eastern Australia.",
+    nationalHabitat: "Dry sclerophyll forest and woodland.",
+    confusionNotes: "Compare other wattles using phyllode shape, flower arrangement, and pod characters."
   },
-  habitat: {
-    victoria: "Open forest, woodland, and disturbed sunny sites.",
-    national: "Dry sclerophyll forest and woodland."
+  media: {
+    gallery: [],
+    groups: {
+      habit: [],
+      flowers: [],
+      fruit: [],
+      details: []
+    }
   },
-  similarityNotes: "Compare other wattles using phyllode shape, flower arrangement, and pod characters.",
-  sourceComparison: [
+  naming: {
+    commonNames: ["Golden Wattle"],
+    alsoKnownAs: []
+  },
+  references: [{ label: "VicFlora", source: "VicFlora taxon profile" }],
+  sources: [
     { source: "VicFlora", role: "Victorian authority", present: true, summary: "Local profile and status." },
     { source: "ALA BIE", role: "National taxon identity", present: true, summary: "Accepted name and common names." },
     { source: "ALA Flora of Australia", role: "National authored treatment", present: false, summary: "No authored fixture treatment included." }
   ],
-  citations: [{ label: "VicFlora", source: "VicFlora taxon profile" }],
+  rawSources: {},
+  metadata,
+  warnings: ["Harness fixture data: enable Live MCP to query the local server."]
+};
+
+const sweetBursaria: PlantLearningProfile = {
+  query: { name: "Bursaria spinosa", region: "VIC" },
+  displayName: "Sweet Bursaria",
+  scientificName: "Bursaria spinosa",
+  scientificNameWithAuthorship: "Bursaria spinosa (Cav.) F.Muell.",
+  family: "Pittosporaceae",
+  groupLabel: "Bursaria",
+  spotIt: {
+    oneLiner: "A spiny native shrub with clusters of fragrant white flowers and distinctive winged fruit.",
+    fieldMarks: [
+      "Stiff spines on older branches",
+      "Opposite, oval, toothed leaves",
+      "Terminal clusters of small white flowers",
+      "Flat brown capsules with papery wings"
+    ]
+  },
+  inVictoria: {
+    statusLabel: "Native to Victoria",
+    where: "Widespread in woodland, forest margins, and roadsides across much of Victoria.",
+    when: "Flowers mainly Dec–Feb."
+  },
+  detail: {
+    fullDescription: "An erect shrub or small tree, often 2–5 metres, with aromatic foliage and conspicuous winged seed capsules.",
+    nationalRange: "Occurs in south-eastern mainland Australia and Tasmania.",
+    nationalHabitat: "Dry and moist sclerophyll forest, woodland, and cleared land.",
+    confusionNotes: "The spines, opposite leaves, and winged fruit distinguish it from most other white-flowered shrubs."
+  },
+  media: {
+    gallery: [],
+    groups: {
+      habit: [],
+      flowers: [],
+      fruit: [],
+      details: []
+    }
+  },
+  naming: {
+    commonNames: ["Sweet Bursaria", "Blackthorn", "Christmas Bush"],
+    alsoKnownAs: ["Blackthorn", "Christmas Bush"]
+  },
+  references: [{ label: "VicFlora", source: "VicFlora taxon profile" }],
+  sources: [
+    { source: "VicFlora", role: "Victorian authority", present: true, summary: "Local profile and status." },
+    { source: "ALA BIE", role: "National taxon identity", present: true, summary: "Accepted name and common names." },
+    { source: "ALA Flora of Australia", role: "National authored treatment", present: true, summary: "National diagnostic and habitat attributes." }
+  ],
+  rawSources: {},
+  metadata,
+  warnings: ["Harness fixture data: enable Live MCP to query the local server."]
+};
+
+const goldenSpray: PlantLearningProfile = {
+  query: { name: "Viminaria juncea", region: "VIC" },
+  displayName: "Golden Spray",
+  scientificName: "Viminaria juncea",
+  scientificNameWithAuthorship: "Viminaria juncea (Schrad. & J.C.Wendl.) Hoffmanns.",
+  family: "Fabaceae",
+  groupLabel: "Pea-flower",
+  spotIt: {
+    oneLiner: "A leafless shrub of wet forests with green whip-like stems and sprays of bright yellow pea flowers.",
+    fieldMarks: [
+      "Leafless green stems (cladodes)",
+      "Loose terminal sprays of yellow flowers",
+      "Small flattened pods",
+      "Often beside streams and in damp gullies"
+    ]
+  },
+  inVictoria: {
+    statusLabel: "Native to Victoria",
+    where: "Eastern Victoria in cool temperate and wet forest, often along watercourses.",
+    when: "Flowers mainly Sep–Nov."
+  },
+  detail: {
+    fullDescription: "An open shrub to about 3 metres with rush-like green stems and showy yellow flowers in spring.",
+    nationalRange: "South-eastern mainland Australia from Victoria to south-eastern Queensland.",
+    nationalHabitat: "Cool temperate rainforest, wet sclerophyll forest, and riparian scrub.",
+    confusionNotes: "The leafless green stems and yellow pea flowers are distinctive; compare with other leafless wattles using flower and pod details."
+  },
+  media: {
+    gallery: [],
+    groups: {
+      habit: [],
+      flowers: [],
+      fruit: [],
+      details: []
+    }
+  },
+  naming: {
+    commonNames: ["Golden Spray", "Leafless Pore-flower"],
+    alsoKnownAs: ["Leafless Pore-flower"]
+  },
+  references: [{ label: "VicFlora", source: "VicFlora taxon profile" }],
+  sources: [
+    { source: "VicFlora", role: "Victorian authority", present: true, summary: "Local profile and status." },
+    { source: "ALA BIE", role: "National taxon identity", present: true, summary: "Accepted name and common names." },
+    { source: "ALA Flora of Australia", role: "National authored treatment", present: true, summary: "National diagnostic and habitat attributes." }
+  ],
   rawSources: {},
   metadata,
   warnings: ["Harness fixture data: enable Live MCP to query the local server."]
@@ -124,11 +272,13 @@ const scenarioSchema = z.object({
         profile: z.object({
           displayName: z.string().min(1),
           scientificName: z.string().min(1),
-          commonNames: z.array(z.string()),
-          recognition: z.object({}).passthrough(),
-          status: z.object({}).passthrough(),
-          sourceComparison: z.array(z.object({}).passthrough()),
-          citations: z.array(z.object({}).passthrough()),
+          spotIt: z.object({}).passthrough(),
+          inVictoria: z.object({}).passthrough(),
+          naming: z.object({
+            commonNames: z.array(z.string())
+          }).passthrough(),
+          sources: z.array(z.object({}).passthrough()),
+          references: z.array(z.object({}).passthrough()),
           warnings: z.array(z.string())
         }).passthrough()
       }).passthrough()
@@ -161,6 +311,32 @@ const authoredScenarios: HarnessScenario[] = [
       arguments: { name: "Acacia pycnantha", region: "VIC" },
       resourceUri: APP_RESOURCE_URI,
       result: profileResult(goldenWattle)
+    }
+  },
+  {
+    id: "sweet-bursaria",
+    label: "Show me Sweet Bursaria",
+    userMessage: "Show me a learning card for Bursaria spinosa.",
+    assistantBefore: "Here’s a field-oriented overview of Sweet Bursaria from Victorian and national sources.",
+    assistantAfter: "Look for spines, opposite toothed leaves, and winged fruit capsules — especially when the white flower clusters are out in summer.",
+    tool: {
+      name: "open_plant_learning_card",
+      arguments: { name: "Bursaria spinosa", region: "VIC" },
+      resourceUri: APP_RESOURCE_URI,
+      result: profileResult(sweetBursaria)
+    }
+  },
+  {
+    id: "golden-spray",
+    label: "Teach me Golden Spray",
+    userMessage: "Teach me about Viminaria juncea and how to recognise it.",
+    assistantBefore: "Golden Spray is a distinctive leafless shrub — let’s line up the key field marks.",
+    assistantAfter: "The green whip-like stems and loose yellow flower sprays are hard to miss in spring along damp gullies.",
+    tool: {
+      name: "open_plant_learning_card",
+      arguments: { name: "Viminaria juncea", region: "VIC" },
+      resourceUri: APP_RESOURCE_URI,
+      result: profileResult(goldenSpray)
     }
   }
 ];

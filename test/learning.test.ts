@@ -26,11 +26,29 @@ const vicfloraProfile: PlantProfile = {
     sourceUrl: "https://vicflora.rbg.vic.gov.au/flora/taxon/b81ef7c6-89a0-45d7-9b2b-cebb16c7033a"
   },
   profileText:
-    '<p class="description">Tree to 40 m tall; bark smooth and mottled.</p><p class="phenology">Flowers summer.</p><p class="habitat">Widespread along rivers in Victoria.</p><p class="note">Only the type subspecies occurs in Victoria.</p>',
+    '<p class="description">Tree to 40 m tall; bark smooth and mottled.</p><p class="phenology">Flowers summer.</p><p class="habitat">Widespread along rivers in Victoria.</p><p class="distribution_australia">Occurs in every mainland State.</p><p class="note">Only the type subspecies occurs in Victoria.</p>',
   profileModified: "2018-08-28",
-  classification: [],
+  classification: [
+    {
+      id: "family-1",
+      scientificName: "Myrtaceae",
+      rank: "FAMILY",
+      commonNames: [],
+      sourceUrl: "https://example.test/family"
+    },
+    {
+      id: "genus-1",
+      scientificName: "Eucalyptus",
+      rank: "GENUS",
+      commonNames: [],
+      sourceUrl: "https://example.test/genus"
+    }
+  ],
   synonyms: [],
-  phenology: [],
+  phenology: [
+    { month: "Dec", total: 4, buds: 1, flowers: 3, fruit: 0 },
+    { month: "Jan", total: 6, buds: 0, flowers: 6, fruit: 0 }
+  ],
   images: [
     {
       id: "image-1",
@@ -113,15 +131,18 @@ describe("PlantLearningService", () => {
 
     expect(result.displayName).toBe("River Red-gum");
     expect(result.scientificName).toBe("Eucalyptus camaldulensis");
-    expect(result.commonNames).toContain("Murray Red Gum");
-    expect(result.recognition.diagnosticFeatures).toContain("smooth-barked");
-    expect(result.status).toMatchObject({
-      victorian: "PRESENT",
-      establishmentMeans: "NATIVE",
-      nationalBiostatus: "Native."
-    });
-    expect(result.sourceComparison.map((source) => source.present)).toEqual([true, true, true]);
-    expect(result.citations.map((citation) => citation.label)).toContain("Flora of Australia");
+    expect(result.naming.commonNames).toContain("Murray Red Gum");
+    expect(result.naming.alsoKnownAs).toContain("Murray Red Gum");
+    expect(result.naming.alsoKnownAs).not.toContain("River Red-gum");
+    expect(result.spotIt.oneLiner).toContain("smooth-barked");
+    expect(result.inVictoria.statusLabel).toBe("Native to Victoria");
+    expect(result.inVictoria.where).toContain("rivers");
+    expect(result.inVictoria.when).toBe("Flowers summer.");
+    expect(result.family).toBe("Myrtaceae");
+    expect(result.groupLabel).toBe("Eucalypt");
+    expect(result.detail.nationalRange).toContain("mainland State");
+    expect(result.sources.map((source) => source.present)).toEqual([true, true, true]);
+    expect(result.references.map((reference) => reference.label)).toContain("Flora of Australia");
   });
 
   it("prefers VicFlora heroImage over detail shots earlier in the list", async () => {
@@ -158,10 +179,12 @@ describe("PlantLearningService", () => {
 
     const result = await service.getLearningProfile({ name: "Eucalyptus camaldulensis" });
 
-    expect(result.heroImage?.url).toContain("habit.jpg");
-    expect(result.imageGallery).toHaveLength(2);
-    expect(result.imageGallery?.[0].url).toContain("habit.jpg");
-    expect(result.imageGallery?.[1].focus).toContain("Longitudinal section");
+    expect(result.spotIt.heroImage?.url).toContain("habit.jpg");
+    expect(result.media.gallery).toHaveLength(2);
+    expect(result.media.gallery[0].url).toContain("habit.jpg");
+    expect(result.media.gallery[1].group).toBe("details");
+    expect(result.media.groups?.details).toHaveLength(1);
+    expect(result.media.groups?.habit).toHaveLength(1);
   });
 
   it("places hero image at gallery index 0 when present in VicFlora images", async () => {
@@ -198,7 +221,7 @@ describe("PlantLearningService", () => {
 
     const result = await service.getLearningProfile({ name: "Eucalyptus camaldulensis" });
 
-    expect(result.heroImage?.url).toBe(result.imageGallery?.[0].url);
+    expect(result.spotIt.heroImage?.url).toBe(result.media.gallery[0].url);
   });
 
   it("skips VicFlora flowering-branch hero flags for habit overview shots", async () => {
@@ -235,7 +258,79 @@ describe("PlantLearningService", () => {
 
     const result = await service.getLearningProfile({ name: "Acacia pycnantha" });
 
-    expect(result.heroImage?.url).toContain("tree.jpg");
+    expect(result.spotIt.heroImage?.url).toContain("tree.jpg");
+  });
+
+  it("formats phenology from monthly records when HTML text is absent", async () => {
+    const profileWithMonthlyPhenology: PlantProfile = {
+      ...vicfloraProfile,
+      profileText: '<p class="description">Tree to 40 m tall.</p><p class="habitat">Along rivers.</p>',
+      phenology: [
+        { month: "Nov", total: 2, buds: 0, flowers: 2, fruit: 0 },
+        { month: "Dec", total: 5, buds: 0, flowers: 5, fruit: 0 },
+        { month: "Jan", total: 3, buds: 0, flowers: 1, fruit: 2, }
+      ]
+    };
+
+    const service = new PlantLearningService(provider(profileWithMonthlyPhenology), {
+      resolveTaxon: async () => ({ query: "Eucalyptus camaldulensis", metadata }),
+      getFloraProfile: async () => ({ query: "Eucalyptus camaldulensis", metadata })
+    });
+
+    const result = await service.getLearningProfile({ name: "Eucalyptus camaldulensis" });
+
+    expect(result.inVictoria.when).toBe("Flowers mainly Nov–Jan. Fruit mainly Jan");
+  });
+
+  it("does not repeat the one-liner in field marks", async () => {
+    const profileWithLongDiagnostic: AlaFloraProfileResult = {
+      ...alaProfileResult,
+      profile: {
+        ...alaProfileResult.profile!,
+        attributeMap: {
+          ...alaProfileResult.profile!.attributeMap,
+          "Diagnostic Features":
+            "Eucalyptus camaldulensis is notably a smooth-barked tree along streams. The species over its whole distribution is distinguished by the seeds, which are cuboid-pyramidal."
+        }
+      }
+    };
+
+    const service = new PlantLearningService(provider(vicfloraProfile), {
+      resolveTaxon: async () => alaTaxonResult,
+      getFloraProfile: async () => profileWithLongDiagnostic
+    });
+
+    const result = await service.getLearningProfile({ name: "Eucalyptus camaldulensis" });
+
+    expect(result.spotIt.oneLiner).toContain("smooth-barked tree along streams");
+    expect(result.spotIt.fieldMarks[0]).toContain("seeds");
+    expect(result.spotIt.fieldMarks.some((mark) => mark.includes("smooth-barked tree along streams"))).toBe(false);
+  });
+
+  it("curates noisy common names for the hero aliases line", async () => {
+    const service = new PlantLearningService(provider(vicfloraProfile), {
+      resolveTaxon: async () => ({
+        ...alaTaxonResult,
+        taxon: {
+          ...alaTaxonResult.taxon!,
+          commonNames: [
+            "Golden Wattle",
+            "Australian Golden Wattle",
+            "Australian Golden Wattle.",
+            "Witch",
+            "Black Wattle"
+          ]
+        }
+      }),
+      getFloraProfile: async () => alaProfileResult
+    });
+
+    const result = await service.getLearningProfile({ name: "Acacia pycnantha" });
+
+    expect(result.naming.alsoKnownAs).toContain("Black Wattle");
+    expect(result.naming.alsoKnownAs).not.toContain("Witch");
+    expect(result.naming.alsoKnownAs.filter((name) => name.startsWith("Australian Golden Wattle"))).toHaveLength(1);
+    expect(result.naming.alsoKnownAs.length).toBeLessThanOrEqual(5);
   });
 
   it("returns a VicFlora-only profile when ALA sources are unavailable", async () => {
@@ -247,8 +342,8 @@ describe("PlantLearningService", () => {
     const result = await service.getLearningProfile({ name: "Eucalyptus camaldulensis" });
 
     expect(result.displayName).toBe("River Red-gum");
-    expect(result.recognition.description).toContain("Tree to 40 m tall");
-    expect(result.sourceComparison.map((source) => source.present)).toEqual([true, false, false]);
-    expect(result.citations[0].source).toContain("Flora of Victoria");
+    expect(result.detail.fullDescription).toContain("Tree to 40 m tall");
+    expect(result.sources.map((source) => source.present)).toEqual([true, false, false]);
+    expect(result.references[0].source).toContain("Flora of Victoria");
   });
 });

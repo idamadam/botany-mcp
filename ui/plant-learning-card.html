@@ -35,6 +35,7 @@
         --text-caption: 0.8125rem;
         --text-title: 1.125rem;
         --text-section: 0.75rem;
+        --app-inset: 14px;
         --surface-overlay: color-mix(in srgb, var(--faint) 92%, transparent);
         --surface-hover: color-mix(in srgb, var(--faint) 70%, transparent);
         --surface-subtle: color-mix(in srgb, var(--foreground) 4%, transparent);
@@ -68,7 +69,7 @@
       }
 
       main.app-shell {
-        padding-block-start: 0;
+        padding: var(--app-inset);
       }
 
       :root,
@@ -99,11 +100,12 @@
       .app-shell {
         max-width: 920px;
         margin: 0 auto;
-        padding: 0;
       }
 
       .card-body[hidden],
-      .card-placeholder[hidden] {
+      .card-placeholder[hidden],
+      .section-block[hidden],
+      .warnings-banner[hidden] {
         display: none;
       }
 
@@ -158,70 +160,76 @@
       }
 
       .hero {
-        margin-bottom: 8px;
-      }
-
-      .gallery-viewer {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-bottom: 10px;
-      }
-
-      .gallery-viewer[hidden] {
-        display: none;
+        margin-bottom: 14px;
       }
 
       .hero-text {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
+        display: grid;
+        gap: 3px;
+        max-width: 68ch;
       }
 
-      .common-name {
-        margin: 0;
-        color: var(--primary-strong);
-        font-size: 0.9375rem;
-        font-weight: 600;
-        line-height: 1.3;
-      }
-
-      h1 {
+      .hero h1 {
         margin: 0;
         font-size: var(--text-title);
         font-weight: 600;
-        line-height: 1.25;
+        font-style: italic;
+        line-height: 1.2;
         letter-spacing: 0;
         text-wrap: balance;
+        color: var(--foreground);
       }
 
-      .taxon-name {
-        font-style: italic;
+      .hero-common {
+        margin: 0;
+        font-size: var(--text-control);
+        font-weight: 500;
+        line-height: 1.4;
+        color: var(--muted-foreground);
       }
 
-      .taxon-authorship {
-        font-style: normal;
+      .hero-aliases {
+        margin: 0;
+        font-size: var(--text-section);
+        line-height: 1.4;
       }
 
-      .taxon-authorship:not(:empty)::before {
-        content: " ";
+      .hero-meta {
+        margin: 2px 0 0;
       }
 
       h2 {
-        margin: 0 0 4px;
-        color: var(--muted-foreground);
-        font-size: var(--text-section);
+        margin: 0;
+        font-size: var(--text-body);
         font-weight: 600;
         line-height: 1.4;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-
-      .gallery-details h2 {
-        color: var(--foreground);
-        font-size: var(--text-control);
         letter-spacing: 0;
         text-transform: none;
+        color: var(--foreground);
+      }
+
+      .spot-one-liner {
+        color: var(--foreground);
+        font-size: var(--text-body);
+        margin-bottom: 8px;
+        font-weight: 500;
+        line-height: 1.5;
+      }
+
+      .text-muted {
+        color: var(--muted-foreground);
+        font-size: var(--text-control);
+        line-height: 1.45;
+      }
+
+      .content-flow {
+        display: grid;
+        gap: 8px;
+        max-width: 68ch;
+      }
+
+      .content-flow > p {
+        margin: 0;
       }
 
       p {
@@ -235,81 +243,88 @@
         text-underline-offset: 3px;
       }
 
-      article > p,
-      .gallery-details > p,
-      #source-comparison {
+      .status-chip,
+      .group-line,
+      .common-name {
+        display: none;
+      }
+
+      .warnings-banner {
+        margin-top: 8px;
+        padding: 8px 10px;
+        border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
+        border-radius: var(--radius-medium);
+        color: var(--danger);
+        font-size: var(--text-control);
+        background: color-mix(in srgb, var(--danger) 8%, transparent);
+      }
+
+      .section-block {
+        margin-bottom: 16px;
+      }
+
+      .section-block > p,
+      .field-marks,
+      .source-links,
+      .content-flow {
         max-width: 68ch;
       }
 
-      ot-tabs {
-        display: block;
+      .field-marks:empty,
+      .field-marks[hidden] {
+        display: none;
       }
 
-      [role="tablist"] {
+      .field-marks {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .field-marks li + li {
+        margin-top: 4px;
+      }
+
+      .gallery-viewer {
         display: flex;
-        width: max-content;
-        max-width: 100%;
-        gap: 2px;
-        margin-bottom: 8px;
-        overflow-x: auto;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-medium);
-        background: transparent;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 14px;
       }
 
-      [role="tab"],
-      .gallery-thumb {
+      .gallery-viewer[hidden] {
+        display: none;
+      }
+
+      .gallery-group-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0;
+        background: transparent;
+        border-radius: 0;
+      }
+
+      .gallery-group-tabs[hidden],
+      .gallery-group-tabs:empty {
+        display: none;
+      }
+
+      .gallery-group-tab {
+        padding: 4px 10px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--muted-foreground);
         font-size: var(--text-control);
         font-weight: 500;
         line-height: 1.4;
+        background: transparent;
+        cursor: pointer;
       }
 
-      [role="tab"] {
-        color: var(--muted-foreground);
-        border-radius: var(--radius-small);
-      }
-
-      [role="tab"]:hover {
-        color: var(--foreground);
-        background: var(--surface-hover);
-      }
-
-      [role="tab"][aria-selected="true"] {
+      .gallery-group-tab[aria-selected="true"] {
+        border-color: var(--ring);
         color: var(--foreground);
         background: var(--surface-subtle);
-        box-shadow: none;
-      }
-
-      [role="tabpanel"] {
-        padding: 10px 0 0;
-      }
-
-      .status-line {
-        margin: 0;
-        color: var(--muted-foreground);
-        font-size: var(--text-section);
-        line-height: 1.35;
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-      }
-
-      .overview-stack {
-        display: grid;
-        gap: 0;
-      }
-
-      .overview-stack article + article {
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-      }
-
-      .gallery-viewer:focus {
-        outline: none;
       }
 
       .gallery-stage {
@@ -341,7 +356,6 @@
         line-height: 1;
         cursor: pointer;
         transform: translateY(-50%);
-        transition: border-color 120ms ease, background-color 120ms ease;
       }
 
       .gallery-nav:hover {
@@ -367,13 +381,16 @@
         min-width: 0;
       }
 
+      .gallery-figure-label {
+        margin: 0 0 4px;
+        font-size: var(--text-control);
+        font-weight: 600;
+        line-height: 1.4;
+      }
+
       .gallery-details > p {
         font-size: var(--text-control);
         line-height: 1.45;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 4;
-        overflow: hidden;
       }
 
       .gallery-frame {
@@ -423,6 +440,13 @@
         overflow-x: auto;
         scroll-snap-type: x mandatory;
         padding: 2px 0;
+        background: transparent;
+        border-radius: 0;
+      }
+
+      .gallery-filmstrip[hidden],
+      .gallery-filmstrip:empty {
+        display: none;
       }
 
       .gallery-thumb {
@@ -433,14 +457,17 @@
         border: 1px solid var(--border);
         border-radius: var(--radius-medium);
         color: var(--foreground);
-        background: var(--surface-subtle);
+        font-size: var(--text-control);
+        font-weight: 500;
+        line-height: 1.4;
+        background: transparent;
         scroll-snap-align: center;
-        transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+        cursor: pointer;
       }
 
       .gallery-thumb[aria-selected="true"] {
         border-color: var(--ring);
-        background: var(--surface-hover);
+        background: color-mix(in srgb, var(--ring) 6%, transparent);
         box-shadow: 0 0 0 2px rgb(113 136 120 / 0.13);
       }
 
@@ -464,8 +491,70 @@
         border: 0;
       }
 
-      article + article {
-        margin-top: 14px;
+      .disclosure-body {
+        display: grid;
+        gap: 12px;
+        padding: 0 16px 14px;
+      }
+
+      .card-body details {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-medium);
+        overflow: hidden;
+      }
+
+      .card-body details + details {
+        margin-top: 0;
+        border-start-start-radius: var(--radius-medium);
+        border-start-end-radius: var(--radius-medium);
+      }
+
+      .card-body details:has(+ details) {
+        border-end-start-radius: var(--radius-medium);
+        border-end-end-radius: var(--radius-medium);
+      }
+
+      .card-body details summary {
+        color: var(--foreground);
+        font-size: var(--text-control);
+        font-weight: 600;
+      }
+
+      .card-body details summary::before {
+        content: none;
+      }
+
+      .card-disclosures {
+        display: grid;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .card-disclosures details + details {
+        margin-top: 0;
+      }
+
+      .name-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        max-width: 68ch;
+      }
+
+      .name-tag {
+        padding: 2px 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--foreground);
+        font-size: var(--text-control);
+        line-height: 1.4;
+        background: var(--surface-subtle);
+      }
+
+      .naming-meta {
+        margin-top: 8px;
+        color: var(--muted-foreground);
+        font-size: var(--text-control);
       }
 
       ul {
@@ -498,15 +587,6 @@
         text-underline-offset: 3px;
       }
 
-      .source-icon {
-        flex: 0 0 16px;
-        width: 16px;
-        height: 16px;
-        border-radius: 3px;
-        object-fit: contain;
-        background: var(--faint);
-      }
-
       .source-name {
         font-size: var(--text-control);
         font-weight: 600;
@@ -520,22 +600,23 @@
         line-height: 1.35;
       }
 
-      .source-empty {
-        margin: 0;
+      .source-icon {
+        flex: 0 0 16px;
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        object-fit: contain;
+        background: var(--faint);
+      }
+
+      .empty-note {
         color: var(--muted-foreground);
         font-size: var(--text-control);
-        line-height: 1.45;
       }
 
       @media (min-width: 640px) {
         .gallery-stage {
           grid-template-columns: 1.4fr 1fr;
-        }
-      }
-
-      @media (max-width: 680px) {
-        .grid {
-          grid-template-columns: 1fr;
         }
       }
     </style>
@@ -550,80 +631,75 @@
       </div>
 
       <div class="card-body" id="card-body" hidden>
-      <section class="hero">
-        <div class="hero-text">
-          <p class="common-name" id="display-name"></p>
-          <h1><i class="taxon-name" id="scientific-name"></i><span class="taxon-authorship" id="scientific-authorship"></span></h1>
-          <p class="status-line" id="status-line"></p>
-        </div>
-      </section>
-
-      <section class="gallery-viewer" id="gallery-viewer" aria-label="Photo gallery" tabindex="-1" hidden>
-        <div class="gallery-stage">
-          <div class="gallery-frame-wrap">
-            <button type="button" class="gallery-nav gallery-nav--prev" id="gallery-prev" aria-label="Previous photo" hidden>‹</button>
-            <div class="gallery-frame" id="gallery-frame"></div>
-            <button type="button" class="gallery-nav gallery-nav--next" id="gallery-next" aria-label="Next photo" hidden>›</button>
+        <section class="hero">
+          <div class="hero-text">
+            <h1 id="scientific-name"></h1>
+            <p class="hero-common" id="common-name" hidden></p>
+            <p class="hero-aliases text-muted" id="hero-aliases" hidden></p>
+            <p class="hero-meta text-muted" id="hero-meta" hidden></p>
           </div>
-          <div class="gallery-details">
-            <h2 id="gallery-title">Photos</h2>
-            <p class="gallery-counter" id="gallery-counter" hidden></p>
-            <p id="gallery-caption"></p>
-            <p class="gallery-meta" id="gallery-credit"></p>
-            <a class="gallery-source" id="gallery-source" href="#" target="_blank" rel="noreferrer">Open source image</a>
+          <div class="warnings-banner" id="warnings-banner" hidden>
+            <ul id="warnings-list"></ul>
           </div>
-        </div>
-        <div class="gallery-filmstrip" id="gallery-thumbnails" role="tablist" aria-label="Gallery photos"></div>
-        <p class="visually-hidden" id="gallery-announce" aria-live="polite"></p>
-      </section>
+        </section>
 
-      <ot-tabs>
-        <div role="tablist" aria-label="Plant profile sections">
-          <button role="tab" type="button" aria-selected="true">Overview</button>
-          <button role="tab" type="button">How to recognise</button>
-        </div>
+        <section class="section-block" id="spot-it-section" aria-label="Recognition">
+          <p class="spot-one-liner" id="spot-one-liner" hidden></p>
+          <ul class="field-marks" id="field-marks" hidden></ul>
+        </section>
 
-        <section role="tabpanel" id="overview">
-          <div class="overview-stack">
-            <article>
-              <h2>At a glance</h2>
-              <p id="summary"></p>
+        <section class="gallery-viewer" id="gallery-viewer" aria-label="Photos" tabindex="-1" hidden>
+          <div class="gallery-group-tabs" id="gallery-group-tabs" aria-label="Photo groups"></div>
+          <div class="gallery-stage">
+            <div class="gallery-frame-wrap">
+              <button type="button" class="gallery-nav gallery-nav--prev" id="gallery-prev" aria-label="Previous photo" hidden>‹</button>
+              <div class="gallery-frame" id="gallery-frame"></div>
+              <button type="button" class="gallery-nav gallery-nav--next" id="gallery-next" aria-label="Next photo" hidden>›</button>
+            </div>
+            <div class="gallery-details">
+              <p class="gallery-figure-label" id="gallery-figure-label" hidden></p>
+              <p class="gallery-counter" id="gallery-counter" hidden></p>
+              <p id="gallery-caption"></p>
+              <p class="gallery-meta" id="gallery-credit"></p>
+              <a class="gallery-source" id="gallery-source" href="#" target="_blank" rel="noreferrer">Open source image</a>
+            </div>
+          </div>
+          <div class="gallery-filmstrip" id="gallery-thumbnails" aria-label="Gallery photos"></div>
+          <p class="visually-hidden" id="gallery-announce" aria-live="polite"></p>
+        </section>
+
+        <section class="section-block content-flow" id="in-victoria-section" aria-label="In Victoria" hidden>
+          <p id="in-victoria-where" hidden></p>
+          <p class="text-muted" id="in-victoria-when" hidden></p>
+          <p class="text-muted" id="in-victoria-conservation" hidden></p>
+        </section>
+
+        <details class="section-block" id="detail-section" hidden>
+          <summary>Full description</summary>
+          <div class="disclosure-body content-flow">
+            <article id="description-block" hidden>
+              <p id="full-description"></p>
             </article>
-            <article>
-              <h2>Habitat</h2>
-              <p id="habitat"></p>
+            <article id="national-range-block" hidden>
+              <p id="national-range"></p>
             </article>
-            <article>
-              <h2>Distribution</h2>
-              <p id="distribution"></p>
+            <article id="national-habitat-block" hidden>
+              <p id="national-habitat"></p>
             </article>
-            <article>
-              <h2>Names</h2>
-              <p id="common-names"></p>
+            <article id="confusion-block" hidden>
+              <p id="confusion-notes"></p>
             </article>
-            <article>
-              <h2>Sources</h2>
+          </div>
+        </details>
+
+        <div class="card-disclosures" id="card-disclosures">
+          <details id="sources-section">
+            <summary>Sources</summary>
+            <div class="disclosure-body">
               <ul class="source-links" id="source-comparison"></ul>
-            </article>
-          </div>
-        </section>
-
-        <section role="tabpanel" id="recognise">
-          <article>
-            <h2>Diagnostic features</h2>
-            <p id="diagnostic"></p>
-          </article>
-          <article>
-            <h2>Description</h2>
-            <p id="description"></p>
-          </article>
-          <article>
-            <h2>Taxonomic notes</h2>
-            <p id="similarity"></p>
-          </article>
-        </section>
-
-      </ot-tabs>
+            </div>
+          </details>
+        </div>
       </div>
     </main>
 
