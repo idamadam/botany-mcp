@@ -223,6 +223,10 @@ const text = (id: string, value: string | undefined, fallback = "No data availab
   byId(id).textContent = value?.trim() || fallback;
 };
 
+let galleryImages: PlantImage[] = [];
+let gallerySelectedIndex = 0;
+let galleryInteractionsReady = false;
+
 const joinParts = (parts: Array<string | undefined>) => parts.filter(Boolean).join(" | ");
 
 const MAX_THUMB_LABEL = 40;
@@ -323,6 +327,8 @@ const parseProfile = (result: ToolResult): PlantLearningProfile | undefined => {
 const renderHeroImage = (profile: PlantLearningProfile) => {
   const container = byId("hero-image");
   container.replaceChildren();
+  container.className = "hero-image";
+  container.onclick = null;
 
   if (!profile.heroImage?.url) {
     container.hidden = true;
@@ -330,21 +336,208 @@ const renderHeroImage = (profile: PlantLearningProfile) => {
   }
 
   container.hidden = false;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "hero-image-chip";
+  button.setAttribute("aria-label", "View typical habit photo in gallery");
+
   const image = document.createElement("img");
   image.src = profile.heroImage.url;
-  image.alt = profile.heroImage.caption ?? profile.displayName;
-  container.append(image);
+  image.alt = "";
+  button.append(image);
 
-  const creditText = joinParts([
-    profile.heroImage.creator && `Photo: ${profile.heroImage.creator}`,
-    profile.heroImage.license
-  ]);
-  if (creditText) {
-    const credit = document.createElement("p");
-    credit.className = "image-credit";
-    credit.textContent = creditText;
-    container.append(credit);
+  button.addEventListener("click", () => {
+    activatePhotosTab();
+    selectGalleryIndex(0);
+  });
+
+  container.append(button);
+};
+
+const photosTabSelected = () => {
+  const tabs = document.querySelectorAll("ot-tabs [role='tab']");
+  return Array.from(tabs).some(
+    (tab) => tab.textContent?.trim() === "Photos" && tab.getAttribute("aria-selected") === "true"
+  );
+};
+
+const activatePhotosTab = () => {
+  const photosTab = Array.from(document.querySelectorAll("ot-tabs [role='tab']")).find(
+    (tab) => tab.textContent?.trim() === "Photos"
+  );
+  if (photosTab instanceof HTMLButtonElement) {
+    photosTab.click();
   }
+  byId("gallery-viewer").focus();
+};
+
+const scrollThumbIntoView = (button: HTMLButtonElement) => {
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  button.scrollIntoView({
+    block: "nearest",
+    inline: "center",
+    behavior: prefersReducedMotion ? "auto" : "smooth"
+  });
+};
+
+const updateGalleryNav = (index: number, total: number) => {
+  const prev = byId<HTMLButtonElement>("gallery-prev");
+  const counter = byId("gallery-counter");
+  const showNav = total > 1;
+
+  prev.hidden = !showNav;
+  byId<HTMLButtonElement>("gallery-next").hidden = !showNav;
+  counter.hidden = !showNav;
+
+  if (showNav) {
+    prev.disabled = index <= 0;
+    byId<HTMLButtonElement>("gallery-next").disabled = index >= total - 1;
+    counter.textContent = `${index + 1} / ${total}`;
+  } else {
+    counter.textContent = "";
+  }
+};
+
+const selectGalleryIndex = (index: number) => {
+  if (galleryImages.length === 0) {
+    return;
+  }
+
+  const nextIndex = Math.max(0, Math.min(index, galleryImages.length - 1));
+  gallerySelectedIndex = nextIndex;
+  renderGalleryImage(galleryImages[nextIndex], galleryImages, nextIndex);
+};
+
+const renderGalleryImage = (image: PlantImage, images: PlantImage[], index: number) => {
+  const frame = byId("gallery-frame");
+  frame.replaceChildren();
+
+  const photo = document.createElement("img");
+  photo.src = image.url;
+  photo.alt = image.caption ?? image.focus ?? "Plant photo";
+  frame.append(photo);
+
+  text("gallery-title", galleryTitle(image));
+  text("gallery-caption", image.caption);
+  text(
+    "gallery-credit",
+    joinParts([
+      image.creator && `Photo: ${image.creator}`,
+      image.license
+    ]),
+    "Photo credit unavailable."
+  );
+
+  const source = byId<HTMLAnchorElement>("gallery-source");
+  if (image.sourceUrl) {
+    source.href = image.sourceUrl;
+    source.hidden = false;
+  } else {
+    source.hidden = true;
+  }
+
+  updateGalleryNav(index, images.length);
+  byId("gallery-announce").textContent = `Photo ${index + 1} of ${images.length}: ${galleryTitle(image)}`;
+
+  const filmstrip = byId("gallery-thumbnails");
+  filmstrip.querySelectorAll<HTMLButtonElement>(".gallery-thumb").forEach((button, thumbIndex) => {
+    const selected = thumbIndex === index;
+    button.setAttribute("aria-selected", String(selected));
+    button.setAttribute("tabindex", selected ? "0" : "-1");
+    if (selected) {
+      scrollThumbIntoView(button);
+    }
+  });
+};
+
+const setupGalleryInteractions = () => {
+  if (galleryInteractionsReady) {
+    return;
+  }
+  galleryInteractionsReady = true;
+
+  byId<HTMLButtonElement>("gallery-prev").addEventListener("click", () => {
+    selectGalleryIndex(gallerySelectedIndex - 1);
+  });
+  byId<HTMLButtonElement>("gallery-next").addEventListener("click", () => {
+    selectGalleryIndex(gallerySelectedIndex + 1);
+  });
+
+  const viewer = byId("gallery-viewer");
+  viewer.addEventListener("keydown", (event) => {
+    if (!photosTabSelected() || galleryImages.length === 0) {
+      return;
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      selectGalleryIndex(gallerySelectedIndex - 1);
+      return;
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      selectGalleryIndex(gallerySelectedIndex + 1);
+      return;
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      selectGalleryIndex(0);
+      return;
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      selectGalleryIndex(galleryImages.length - 1);
+    }
+  });
+
+  byId("gallery-thumbnails").addEventListener("keydown", (event) => {
+    if (!photosTabSelected() || galleryImages.length === 0) {
+      return;
+    }
+
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement) || !target.classList.contains("gallery-thumb")) {
+      return;
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      selectGalleryIndex(gallerySelectedIndex - 1);
+      filmstripFocusSelected();
+      return;
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      selectGalleryIndex(gallerySelectedIndex + 1);
+      filmstripFocusSelected();
+      return;
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      selectGalleryIndex(0);
+      filmstripFocusSelected();
+      return;
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      selectGalleryIndex(galleryImages.length - 1);
+      filmstripFocusSelected();
+    }
+  });
+};
+
+const filmstripFocusSelected = () => {
+  const selected = byId("gallery-thumbnails").querySelector<HTMLButtonElement>(
+    ".gallery-thumb[aria-selected='true']"
+  );
+  selected?.focus();
 };
 
 const renderSourceComparison = (profile: PlantLearningProfile) => {
@@ -390,44 +583,11 @@ const renderSourceComparison = (profile: PlantLearningProfile) => {
   }
 };
 
-const renderGalleryImage = (image: PlantImage, images: PlantImage[]) => {
-  const frame = byId("gallery-frame");
-  frame.replaceChildren();
-
-  const photo = document.createElement("img");
-  photo.src = image.url;
-  photo.alt = image.caption ?? image.focus ?? "Plant photo";
-  frame.append(photo);
-
-  text("gallery-title", galleryTitle(image));
-  text("gallery-caption", image.caption);
-  text(
-    "gallery-credit",
-    joinParts([
-      image.creator && `Photo: ${image.creator}`,
-      image.license
-    ]),
-    "Photo credit unavailable."
-  );
-
-  const source = byId<HTMLAnchorElement>("gallery-source");
-  if (image.sourceUrl) {
-    source.href = image.sourceUrl;
-    source.hidden = false;
-  } else {
-    source.hidden = true;
-  }
-
-  byId("gallery-thumbnails")
-    .querySelectorAll<HTMLButtonElement>(".gallery-thumb")
-    .forEach((button, index) => {
-      button.setAttribute("aria-pressed", String(images[index] === image));
-    });
-};
-
 const renderGallery = (profile: PlantLearningProfile) => {
-  const thumbnails = byId("gallery-thumbnails");
-  thumbnails.replaceChildren();
+  setupGalleryInteractions();
+
+  const filmstrip = byId("gallery-thumbnails");
+  filmstrip.replaceChildren();
 
   const images = profile.imageGallery?.length
     ? profile.imageGallery
@@ -435,12 +595,19 @@ const renderGallery = (profile: PlantLearningProfile) => {
       ? [profile.heroImage]
       : [];
 
+  galleryImages = images;
+  gallerySelectedIndex = 0;
+
   if (images.length === 0) {
     byId("gallery-frame").replaceChildren();
     text("gallery-title", "Photos");
     text("gallery-caption", undefined, "No photos returned yet.");
     text("gallery-credit", undefined, "");
+    byId("gallery-counter").hidden = true;
     byId<HTMLAnchorElement>("gallery-source").hidden = true;
+    byId<HTMLButtonElement>("gallery-prev").hidden = true;
+    byId<HTMLButtonElement>("gallery-next").hidden = true;
+    byId("gallery-announce").textContent = "";
     return;
   }
 
@@ -448,21 +615,21 @@ const renderGallery = (profile: PlantLearningProfile) => {
     const button = document.createElement("button");
     button.className = "gallery-thumb";
     button.type = "button";
-    button.setAttribute("aria-pressed", String(index === 0));
+    button.role = "tab";
+    button.setAttribute("aria-selected", String(index === 0));
+    button.setAttribute("tabindex", index === 0 ? "0" : "-1");
+    button.setAttribute("aria-label", galleryThumbLabel(image, index));
 
     const thumbnail = document.createElement("img");
     thumbnail.src = image.url;
     thumbnail.alt = "";
 
-    const label = document.createElement("span");
-    label.textContent = galleryThumbLabel(image, index);
-
-    button.append(thumbnail, label);
-    button.addEventListener("click", () => renderGalleryImage(image, images));
-    thumbnails.append(button);
+    button.append(thumbnail);
+    button.addEventListener("click", () => selectGalleryIndex(index));
+    filmstrip.append(button);
   }
 
-  renderGalleryImage(images[0], images);
+  renderGalleryImage(images[0], images, 0);
 };
 
 const renderProfile = (profile: PlantLearningProfile) => {

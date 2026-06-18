@@ -160,7 +160,45 @@ describe("PlantLearningService", () => {
 
     expect(result.heroImage?.url).toContain("habit.jpg");
     expect(result.imageGallery).toHaveLength(2);
-    expect(result.imageGallery?.[0].focus).toContain("Longitudinal section");
+    expect(result.imageGallery?.[0].url).toContain("habit.jpg");
+    expect(result.imageGallery?.[1].focus).toContain("Longitudinal section");
+  });
+
+  it("places hero image at gallery index 0 when present in VicFlora images", async () => {
+    const profileWithMixedImages: PlantProfile = {
+      ...vicfloraProfile,
+      images: [
+        {
+          id: "detail",
+          title: "Longitudinal section through capsule",
+          previewUrl: "http://localhost:3000/images/vicflora?url=https%3A%2F%2Fexample.test%2Fdetail.jpg",
+          previewSourceUrl: "https://example.test/detail.jpg",
+          heroImage: false,
+          rating: 5,
+          pixelXDimension: 1200,
+          pixelYDimension: 900
+        },
+        {
+          id: "habit",
+          title: "Big old river red gum beside the Murray River",
+          previewUrl: "http://localhost:3000/images/vicflora?url=https%3A%2F%2Fexample.test%2Fhabit.jpg",
+          previewSourceUrl: "https://example.test/habit.jpg",
+          heroImage: false,
+          rating: 4,
+          pixelXDimension: 3872,
+          pixelYDimension: 2592
+        }
+      ]
+    };
+
+    const service = new PlantLearningService(provider(profileWithMixedImages), {
+      resolveTaxon: async () => ({ query: "Eucalyptus camaldulensis", metadata }),
+      getFloraProfile: async () => ({ query: "Eucalyptus camaldulensis", metadata })
+    });
+
+    const result = await service.getLearningProfile({ name: "Eucalyptus camaldulensis" });
+
+    expect(result.heroImage?.url).toBe(result.imageGallery?.[0].url);
   });
 
   it("skips VicFlora flowering-branch hero flags for habit overview shots", async () => {

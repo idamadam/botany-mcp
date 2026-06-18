@@ -216,6 +216,29 @@ const buildImageGallery = (images: ProfileImage[]): PlantLearningProfile["imageG
   return gallery.length > 0 ? gallery : undefined;
 };
 
+const orderGalleryWithHeroFirst = (
+  gallery: PlantLearningProfile["imageGallery"],
+  hero: PlantLearningProfile["heroImage"]
+): PlantLearningProfile["imageGallery"] => {
+  if (!gallery?.length || !hero?.url) {
+    return gallery;
+  }
+
+  const heroIndex = gallery.findIndex((image) => image.url === hero.url);
+  if (heroIndex < 0) {
+    return gallery;
+  }
+
+  if (heroIndex === 0) {
+    return gallery;
+  }
+
+  const reordered = [...gallery];
+  const [heroItem] = reordered.splice(heroIndex, 1);
+  reordered.unshift(heroItem);
+  return reordered;
+};
+
 export class PlantLearningService {
   constructor(
     private readonly vicflora: BotanyProvider,
@@ -262,6 +285,9 @@ export class PlantLearningService {
       attr(alaFloraProfile, "Common Name")?.split(",").map((name) => name.trim()).join("|")
     ].flatMap((value) => value?.includes("|") ? value.split("|") : value));
 
+    const vicfloraImages = vicfloraProfile?.images ?? [];
+    const heroImage = pickHeroImage(vicfloraImages, alaTaxon);
+
     return {
       query: {
         name: input.name,
@@ -274,8 +300,8 @@ export class PlantLearningService {
       scientificName,
       scientificNameWithAuthorship,
       commonNames,
-      heroImage: pickHeroImage(vicfloraProfile?.images ?? [], alaTaxon),
-      imageGallery: buildImageGallery(vicfloraProfile?.images ?? []),
+      heroImage,
+      imageGallery: orderGalleryWithHeroFirst(buildImageGallery(vicfloraImages), heroImage),
       recognition: {
         summary: firstSentence(attr(alaFloraProfile, "Diagnostic Features") ?? vicSections.description ?? attr(alaFloraProfile, "Description")),
         diagnosticFeatures: attr(alaFloraProfile, "Diagnostic Features"),
