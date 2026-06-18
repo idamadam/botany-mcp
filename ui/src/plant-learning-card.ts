@@ -45,6 +45,8 @@ type PlantLearningProfile = {
     role: string;
     present: boolean;
     summary: string;
+    url?: string;
+    iconUrl?: string;
   }>;
   citations: Array<{
     label: string;
@@ -99,19 +101,22 @@ const sampleProfiles: Record<string, PlantLearningProfile> = {
         source: "VicFlora",
         role: "Victorian authority",
         present: true,
-        summary: "Provides Victorian taxon concept, local status, profile text, phenology, images, and references."
+        summary: "Provides Victorian taxon concept, local status, profile text, phenology, images, and references.",
+        url: "https://vicflora.rbg.vic.gov.au/flora/taxon/b81ef7c6-89a0-45d7-9b2b-cebb16c7033a"
       },
       {
         source: "ALA BIE",
         role: "National taxon identity",
         present: true,
-        summary: "Provides APC-backed accepted taxon metadata, common names, identifiers, image pointers, and occurrence count."
+        summary: "Provides APC-backed accepted taxon metadata, common names, identifiers, image pointers, and occurrence count.",
+        url: "https://bie.ala.org.au/species/Eucalyptus+camaldulensis"
       },
       {
         source: "ALA Flora of Australia",
         role: "National authored treatment",
         present: true,
-        summary: "Provides structured national flora attributes such as description, diagnostic features, distribution, habitat, and bibliography."
+        summary: "Provides structured national flora attributes such as description, diagnostic features, distribution, habitat, and bibliography.",
+        url: "https://profiles.ala.org.au/opus/foa/profile/Eucalyptus%20camaldulensis"
       }
     ],
     citations: [
@@ -159,8 +164,8 @@ const sampleProfiles: Record<string, PlantLearningProfile> = {
     },
     similarityNotes: "Compare with other wattles by phyllode shape, flower arrangement, and pod characters.",
     sourceComparison: [
-      { source: "VicFlora", role: "Victorian authority", present: true, summary: "Provides local profile and status." },
-      { source: "ALA BIE", role: "National taxon identity", present: true, summary: "Provides accepted name and common names." },
+      { source: "VicFlora", role: "Victorian authority", present: true, summary: "Provides local profile and status.", url: "https://vicflora.rbg.vic.gov.au/" },
+      { source: "ALA BIE", role: "National taxon identity", present: true, summary: "Provides accepted name and common names.", url: "https://bie.ala.org.au/" },
       { source: "ALA Flora of Australia", role: "National authored treatment", present: false, summary: "No preview profile loaded for this sample." }
     ],
     citations: [
@@ -231,6 +236,62 @@ const galleryThumbLabel = (image: PlantImage, index: number) => {
 
 const galleryTitle = (image: PlantImage) => image.focus?.trim() || "Photo";
 
+const imageProxyPath = (profile: PlantLearningProfile) => {
+  const urls = [
+    profile.heroImage?.url,
+    ...(profile.imageGallery?.map((image) => image.url) ?? [])
+  ].filter(Boolean) as string[];
+
+  for (const url of urls) {
+    try {
+      const parsed = new URL(url, window.location.origin);
+      if (parsed.pathname.includes("/images/")) {
+        return `${parsed.origin}${parsed.pathname}`;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return undefined;
+};
+
+const attachSourceIcon = (
+  row: HTMLElement,
+  entry: PlantLearningProfile["sourceComparison"][number],
+  proxyPath?: string
+) => {
+  const candidates = [
+    entry.iconUrl,
+    entry.url && proxyPath
+      ? `${proxyPath}?url=${encodeURIComponent(new URL("/favicon.ico", new URL(entry.url).origin).href)}`
+      : undefined
+  ].filter((url, index, list): url is string => Boolean(url) && list.indexOf(url) === index);
+
+  if (candidates.length === 0) return;
+
+  const icon = document.createElement("img");
+  icon.className = "source-icon";
+  icon.alt = "";
+  icon.width = 16;
+  icon.height = 16;
+  icon.loading = "lazy";
+  icon.decoding = "async";
+
+  let attempt = 0;
+  const tryNext = () => {
+    if (attempt >= candidates.length) {
+      icon.remove();
+      return;
+    }
+    icon.src = candidates[attempt++];
+  };
+
+  icon.addEventListener("error", tryNext, { once: false });
+  row.prepend(icon);
+  tryNext();
+};
+
 const renderScientificName = (profile: PlantLearningProfile) => {
   text("scientific-name", profile.scientificName);
 
@@ -286,28 +347,45 @@ const renderHeroImage = (profile: PlantLearningProfile) => {
   }
 };
 
-const renderCitations = (profile: PlantLearningProfile) => {
-  const list = byId<HTMLUListElement>("citations");
+const renderSourceComparison = (profile: PlantLearningProfile) => {
+  const list = byId<HTMLUListElement>("source-comparison");
   list.replaceChildren();
 
-  for (const citation of profile.citations) {
+  const cited = profile.sourceComparison.filter((entry) => entry.present);
+  const proxyPath = imageProxyPath(profile);
+
+  for (const entry of cited) {
     const item = document.createElement("li");
-    if (citation.url) {
-      const link = document.createElement("a");
-      link.href = citation.url;
-      link.target = "_blank";
-      link.rel = "noreferrer";
-      link.textContent = citation.label;
-      item.append(link, ` - ${citation.source}`);
-    } else {
-      item.textContent = `${citation.label} - ${citation.source}`;
+    item.className = "source-item";
+
+    const row = document.createElement(entry.url ? "a" : "div");
+    row.className = "source-row";
+    if (row instanceof HTMLAnchorElement && entry.url) {
+      row.href = entry.url;
+      row.target = "_blank";
+      row.rel = "noreferrer";
     }
+
+    attachSourceIcon(row, entry, proxyPath);
+
+    const name = document.createElement("span");
+    name.className = "source-name";
+    name.textContent = entry.source;
+    row.append(name);
+    item.append(row);
+
+    const detail = document.createElement("p");
+    detail.className = "source-detail";
+    detail.textContent = entry.role;
+    item.append(detail);
+
     list.append(item);
   }
 
-  if (profile.citations.length === 0) {
+  if (cited.length === 0) {
     const item = document.createElement("li");
-    item.textContent = "No citations returned.";
+    item.className = "source-empty";
+    item.textContent = "No sources cited.";
     list.append(item);
   }
 };
@@ -415,7 +493,7 @@ const renderProfile = (profile: PlantLearningProfile) => {
   text("diagnostic", profile.recognition.diagnosticFeatures);
   text("description", profile.recognition.description);
   text("similarity", profile.similarityNotes);
-  renderCitations(profile);
+  renderSourceComparison(profile);
 };
 
 app.ontoolresult = (result) => {

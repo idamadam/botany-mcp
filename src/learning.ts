@@ -1,3 +1,4 @@
+import { config } from "./config.js";
 import { AlaFloraProfile, AlaProvider, AlaTaxon } from "./providers/ala.js";
 import { BotanyProvider, PlantLearningProfile, PlantProfile, SourceMetadata } from "./providers/types.js";
 
@@ -107,6 +108,19 @@ const citationFromReference = (reference: PlantProfile["references"][number]) =>
   source: reference.referenceStringMarkdown ?? reference.referenceString ?? reference.title ?? "VicFlora reference",
   url: reference.doi ? `https://doi.org/${reference.doi}` : undefined
 });
+
+const proxyFavicon = (pageUrl: string | undefined) => {
+  if (!pageUrl) return undefined;
+
+  try {
+    const faviconUrl = new URL("/favicon.ico", new URL(pageUrl).origin).href;
+    const proxyUrl = new URL(config.imageProxyPath, config.publicBaseUrl);
+    proxyUrl.searchParams.set("url", faviconUrl);
+    return proxyUrl.toString();
+  } catch {
+    return undefined;
+  }
+};
 
 type ProfileImage = PlantProfile["images"][number];
 type LearningImage = NonNullable<PlantLearningProfile["imageGallery"]>[number];
@@ -307,7 +321,9 @@ export class PlantLearningService {
         present: Boolean(vicfloraProfile),
         summary: vicfloraProfile
           ? "Provides Victorian taxon concept, local status, profile text, phenology, images, and references."
-          : "No VicFlora profile was available for this query."
+          : "No VicFlora profile was available for this query.",
+        url: vicfloraProfile?.taxon.sourceUrl,
+        iconUrl: proxyFavicon(vicfloraProfile?.taxon.sourceUrl)
       },
       {
         source: "ALA BIE",
@@ -315,7 +331,9 @@ export class PlantLearningService {
         present: Boolean(alaTaxon),
         summary: alaTaxon
           ? "Provides APC-backed accepted taxon metadata, common names, identifiers, image pointers, and occurrence count."
-          : "No ALA BIE taxon match was available for this query."
+          : "No ALA BIE taxon match was available for this query.",
+        url: alaTaxon?.sourceUrl,
+        iconUrl: proxyFavicon(alaTaxon?.sourceUrl)
       },
       {
         source: "ALA Flora of Australia",
@@ -323,7 +341,9 @@ export class PlantLearningService {
         present: Boolean(alaFloraProfile),
         summary: alaFloraProfile
           ? "Provides structured national flora attributes such as description, diagnostic features, distribution, habitat, and bibliography."
-          : "No Flora of Australia profile was available for this query."
+          : "No Flora of Australia profile was available for this query.",
+        url: alaFloraProfile?.sourceUrl,
+        iconUrl: proxyFavicon(alaFloraProfile?.sourceUrl)
       }
     ];
   }

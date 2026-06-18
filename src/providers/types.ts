@@ -178,6 +178,8 @@ export type PlantLearningProfile = {
     role: string;
     present: boolean;
     summary: string;
+    url?: string;
+    iconUrl?: string;
   }>;
   citations: Array<{
     label: string;

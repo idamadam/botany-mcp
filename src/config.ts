@@ -46,7 +46,7 @@ export const config = {
   oauthAccessTokenTtlSeconds: toInt(process.env.OAUTH_ACCESS_TOKEN_TTL_SECONDS, 3600),
   imageProxyAllowedHosts: (
     process.env.IMAGE_PROXY_ALLOWED_HOSTS ??
-    "vicflora-cdn.rbg.vic.gov.au,vicflora.rbg.vic.gov.au,images.ala.org.au"
+    "vicflora-cdn.rbg.vic.gov.au,vicflora.rbg.vic.gov.au,images.ala.org.au,bie.ala.org.au,profiles.ala.org.au,icons.duckduckgo.com"
   )
     .split(",")
     .map((host) => host.trim().toLowerCase())
