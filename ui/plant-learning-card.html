@@ -61,54 +61,24 @@
       }
 
       .hero {
-        display: flex;
-        gap: 12px;
-        align-items: center;
         margin-bottom: 10px;
       }
 
-      .hero-image {
-        position: relative;
-        flex: 0 0 64px;
-        width: 64px;
-        overflow: visible;
-        border-radius: var(--radius-medium);
-        background: transparent;
+      .gallery-viewer {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 12px;
       }
 
-      .hero-image[hidden] {
+      .gallery-viewer[hidden] {
         display: none;
       }
 
-      .hero-image-chip {
-        display: block;
-        width: 64px;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        cursor: pointer;
-      }
-
-      .hero-image-chip:hover img {
-        box-shadow: 0 0 0 2px rgb(113 136 120 / 0.25);
-      }
-
-      .hero-image-chip img {
-        display: block;
-        width: 64px;
-        height: 64px;
-        border-radius: var(--radius-medium);
-        object-fit: cover;
-        background: var(--muted);
-      }
-
       .hero-text {
-        flex: 1;
-        min-width: 0;
         display: flex;
         flex-direction: column;
         gap: 2px;
-        padding: 0;
       }
 
       .common-name {
@@ -239,12 +209,6 @@
         margin-top: 10px;
         padding-top: 10px;
         border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-      }
-
-      .gallery-viewer {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
       }
 
       .gallery-viewer:focus {
@@ -472,12 +436,6 @@
         }
       }
 
-      @media (max-width: 480px) {
-        .hero {
-          flex-direction: column;
-        }
-      }
-
       @media (max-width: 680px) {
         .grid {
           grid-template-columns: 1fr;
@@ -487,8 +445,26 @@
   </head>
   <body>
     <main class="app-shell">
+      <section class="gallery-viewer" id="gallery-viewer" aria-label="Photo gallery" tabindex="-1" hidden>
+        <div class="gallery-stage">
+          <div class="gallery-frame-wrap">
+            <button type="button" class="gallery-nav gallery-nav--prev" id="gallery-prev" aria-label="Previous photo" hidden>‹</button>
+            <div class="gallery-frame" id="gallery-frame"></div>
+            <button type="button" class="gallery-nav gallery-nav--next" id="gallery-next" aria-label="Next photo" hidden>›</button>
+          </div>
+          <div class="gallery-details">
+            <h2 id="gallery-title">Photos</h2>
+            <p class="gallery-counter" id="gallery-counter" hidden></p>
+            <p id="gallery-caption"></p>
+            <p class="gallery-meta" id="gallery-credit"></p>
+            <a class="gallery-source" id="gallery-source" href="#" target="_blank" rel="noreferrer">Open source image</a>
+          </div>
+        </div>
+        <div class="gallery-filmstrip" id="gallery-thumbnails" role="tablist" aria-label="Gallery photos"></div>
+        <p class="visually-hidden" id="gallery-announce" aria-live="polite"></p>
+      </section>
+
       <section class="hero">
-        <div class="hero-image" id="hero-image" hidden></div>
         <div class="hero-text">
           <p class="common-name" id="display-name">Loading...</p>
           <h1><i class="taxon-name" id="scientific-name">Plant profile</i><span class="taxon-authorship" id="scientific-authorship"></span></h1>
@@ -499,7 +475,6 @@
       <ot-tabs>
         <div role="tablist" aria-label="Plant profile sections">
           <button role="tab" type="button" aria-selected="true">Overview</button>
-          <button role="tab" type="button">Photos</button>
           <button role="tab" type="button">How to recognise</button>
         </div>
 
@@ -526,27 +501,6 @@
               <ul class="source-links" id="source-comparison"></ul>
             </article>
           </div>
-        </section>
-
-        <section role="tabpanel" id="photos">
-          <section class="gallery-viewer" id="gallery-viewer" aria-label="Photo gallery" tabindex="-1">
-            <div class="gallery-stage">
-              <div class="gallery-frame-wrap">
-                <button type="button" class="gallery-nav gallery-nav--prev" id="gallery-prev" aria-label="Previous photo" hidden>‹</button>
-                <div class="gallery-frame" id="gallery-frame"></div>
-                <button type="button" class="gallery-nav gallery-nav--next" id="gallery-next" aria-label="Next photo" hidden>›</button>
-              </div>
-              <div class="gallery-details">
-                <h2 id="gallery-title">Photos</h2>
-                <p class="gallery-counter" id="gallery-counter" hidden></p>
-                <p id="gallery-caption"></p>
-                <p class="gallery-meta" id="gallery-credit"></p>
-                <a class="gallery-source" id="gallery-source" href="#" target="_blank" rel="noreferrer">Open source image</a>
-              </div>
-            </div>
-            <div class="gallery-filmstrip" id="gallery-thumbnails" role="tablist" aria-label="Gallery photos"></div>
-            <p class="visually-hidden" id="gallery-announce" aria-live="polite"></p>
-          </section>
         </section>
 
         <section role="tabpanel" id="recognise">

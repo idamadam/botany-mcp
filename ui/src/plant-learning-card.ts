@@ -324,54 +324,6 @@ const parseProfile = (result: ToolResult): PlantLearningProfile | undefined => {
   }
 };
 
-const renderHeroImage = (profile: PlantLearningProfile) => {
-  const container = byId("hero-image");
-  container.replaceChildren();
-  container.className = "hero-image";
-  container.onclick = null;
-
-  if (!profile.heroImage?.url) {
-    container.hidden = true;
-    return;
-  }
-
-  container.hidden = false;
-
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "hero-image-chip";
-  button.setAttribute("aria-label", "View typical habit photo in gallery");
-
-  const image = document.createElement("img");
-  image.src = profile.heroImage.url;
-  image.alt = "";
-  button.append(image);
-
-  button.addEventListener("click", () => {
-    activatePhotosTab();
-    selectGalleryIndex(0);
-  });
-
-  container.append(button);
-};
-
-const photosTabSelected = () => {
-  const tabs = document.querySelectorAll("ot-tabs [role='tab']");
-  return Array.from(tabs).some(
-    (tab) => tab.textContent?.trim() === "Photos" && tab.getAttribute("aria-selected") === "true"
-  );
-};
-
-const activatePhotosTab = () => {
-  const photosTab = Array.from(document.querySelectorAll("ot-tabs [role='tab']")).find(
-    (tab) => tab.textContent?.trim() === "Photos"
-  );
-  if (photosTab instanceof HTMLButtonElement) {
-    photosTab.click();
-  }
-  byId("gallery-viewer").focus();
-};
-
 const scrollThumbIntoView = (button: HTMLButtonElement) => {
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   button.scrollIntoView({
@@ -466,7 +418,7 @@ const setupGalleryInteractions = () => {
 
   const viewer = byId("gallery-viewer");
   viewer.addEventListener("keydown", (event) => {
-    if (!photosTabSelected() || galleryImages.length === 0) {
+    if (viewer.hidden || galleryImages.length === 0) {
       return;
     }
 
@@ -495,7 +447,7 @@ const setupGalleryInteractions = () => {
   });
 
   byId("gallery-thumbnails").addEventListener("keydown", (event) => {
-    if (!photosTabSelected() || galleryImages.length === 0) {
+    if (byId("gallery-viewer").hidden || galleryImages.length === 0) {
       return;
     }
 
@@ -597,8 +549,10 @@ const renderGallery = (profile: PlantLearningProfile) => {
 
   galleryImages = images;
   gallerySelectedIndex = 0;
+  const viewer = byId("gallery-viewer");
 
   if (images.length === 0) {
+    viewer.hidden = true;
     byId("gallery-frame").replaceChildren();
     text("gallery-title", "Photos");
     text("gallery-caption", undefined, "No photos returned yet.");
@@ -610,6 +564,8 @@ const renderGallery = (profile: PlantLearningProfile) => {
     byId("gallery-announce").textContent = "";
     return;
   }
+
+  viewer.hidden = false;
 
   for (const [index, image] of images.entries()) {
     const button = document.createElement("button");
@@ -645,7 +601,6 @@ const renderProfile = (profile: PlantLearningProfile) => {
     "Status not available."
   );
 
-  renderHeroImage(profile);
   renderGallery(profile);
   text("summary", profile.recognition.summary);
   text("habitat", joinParts([
