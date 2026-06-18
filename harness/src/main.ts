@@ -107,14 +107,13 @@ const bubble = (role: "user" | "assistant", content: string) => `
   </article>
 `;
 
-const renderTranscript = (item: HarnessScenario, loading = false, error?: string) => {
+const renderTranscript = (item: HarnessScenario, error?: string) => {
   transcript.innerHTML = [
     bubble("user", item.userMessage),
     item.assistantBefore ? bubble("assistant", item.assistantBefore) : "",
     `<div class="card-slot-wrap">
       <div class="tool-caption"><span>${item.tool.name}</span><code>${mode === "live" ? "live" : "fixture"}</code></div>
-      <div id="card-slot" class="card-slot ${loading ? "loading" : ""}">
-        ${loading ? "<div class=\"loading-state\"><span></span>Preparing MCP App…</div>" : ""}
+      <div id="card-slot" class="card-slot">
         ${error ? `<div class="error-state"><strong>Couldn’t render the app</strong><p>${error}</p></div>` : ""}
       </div>
     </div>`,
@@ -125,15 +124,11 @@ const renderTranscript = (item: HarnessScenario, loading = false, error?: string
 const mountCurrent = async () => {
   if (!result) return;
   const slot = transcript.querySelector<HTMLElement>("#card-slot")!;
-  slot.classList.add("loading");
-  slot.innerHTML = "<div class=\"loading-state\"><span></span>Mounting updated app…</div>";
   try {
-    await appHost.mount(slot, scenario, mode, result, theme);
-    slot.classList.remove("loading");
+    await appHost.mount(slot, scenario, mode, theme, result);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     debug("error", "App mount failed", message);
-    slot.classList.remove("loading");
     slot.innerHTML = `<div class="error-state"><strong>Couldn’t render the app</strong><p>${message}</p></div>`;
   }
 };
@@ -141,19 +136,21 @@ const mountCurrent = async () => {
 const play = async () => {
   debugEntries = [];
   result = undefined;
-  renderTranscript(scenario, true);
+  renderTranscript(scenario);
   renderDebug();
   debug("host", "Playing scenario", { id: scenario.id, mode });
+  const slot = transcript.querySelector<HTMLElement>("#card-slot")!;
   try {
+    await appHost.mount(slot, scenario, mode, theme);
     result = await resolveScenarioResult(scenario, mode, callLiveTool);
     debug("host", "Initial tool result ready", result);
-    renderTranscript(scenario);
     renderDebug();
-    await mountCurrent();
+    await appHost.deliverToolResult(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     debug("error", "Scenario failed", message);
-    renderTranscript(scenario, false, message);
+    await appHost.dispose();
+    renderTranscript(scenario, message);
   }
 };
 

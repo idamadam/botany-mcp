@@ -88,8 +88,8 @@ export class HarnessAppHost {
     container: HTMLElement,
     scenario: HarnessScenario,
     mode: PlaybackMode,
-    result: CallToolResult,
-    theme: "light" | "dark"
+    theme: "light" | "dark",
+    result?: CallToolResult
   ) {
     await this.dispose();
     const resource = mode === "live"
@@ -185,11 +185,22 @@ export class HarnessAppHost {
       )
     ]);
     await bridge.sendToolInput({ arguments: scenario.tool.arguments });
-    await bridge.sendToolResult(result);
+    if (result) {
+      await bridge.sendToolResult(result);
+    }
     this.callbacks.onDebug("host", "MCP App mounted", {
       resourceUri: scenario.tool.resourceUri,
-      mode
+      mode,
+      hasResult: Boolean(result)
     });
+  }
+
+  async deliverToolResult(result: CallToolResult) {
+    if (!this.bridge) {
+      throw new Error("MCP App is not mounted.");
+    }
+    await this.bridge.sendToolResult(result);
+    this.callbacks.onDebug("host", "Delivered tool result", result);
   }
 
   setTheme(theme: "light" | "dark") {

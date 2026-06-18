@@ -118,11 +118,7 @@ button:hover { border-color: var(--accent); }
 .tool-caption { display: flex; justify-content: space-between; align-items: center; margin: 0 2px 8px; color: var(--muted); font-size: 11px; }
 .tool-caption code { padding: 2px 6px; border-radius: 5px; background: var(--surface); }
 .card-slot { min-height: 120px; overflow: hidden; background: transparent; }
-.card-slot.loading { display: grid; place-items: center; background: var(--surface); }
 .app-frame { display: block; width: 100%; min-height: 240px; border: 0; background: transparent; }
-.loading-state { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
-.loading-state span { width: 13px; height: 13px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
 .error-state { padding: 24px; color: #a33f3f; }
 .error-state p { margin-bottom: 0; color: var(--muted); }
 

@@ -102,6 +102,61 @@
         padding: 0;
       }
 
+      .card-body[hidden],
+      .card-placeholder[hidden] {
+        display: none;
+      }
+
+      .card-placeholder {
+        display: grid;
+        gap: 10px;
+        padding: 2px 0 4px;
+      }
+
+      .placeholder-line {
+        height: 14px;
+        border-radius: 6px;
+        background: var(--surface-subtle);
+        animation: placeholder-pulse 1.4s ease-in-out infinite;
+      }
+
+      .placeholder-line--title {
+        width: 42%;
+        height: 16px;
+      }
+
+      .placeholder-line--subtitle {
+        width: 72%;
+        height: 22px;
+      }
+
+      .placeholder-line--meta {
+        width: 56%;
+        height: 12px;
+      }
+
+      .placeholder-block {
+        aspect-ratio: 4 / 3;
+        max-height: 220px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-medium);
+        background: var(--surface-subtle);
+        animation: placeholder-pulse 1.4s ease-in-out infinite;
+      }
+
+      @keyframes placeholder-pulse {
+        50% {
+          opacity: 0.55;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .placeholder-line,
+        .placeholder-block {
+          animation: none;
+        }
+      }
+
       .hero {
         margin-bottom: 8px;
       }
@@ -486,11 +541,19 @@
     </style>
   </head>
   <body>
-    <main class="app-shell">
+    <main class="app-shell" id="app-shell" aria-busy="true">
+      <div class="card-placeholder" id="card-placeholder" aria-hidden="false">
+        <div class="placeholder-line placeholder-line--title"></div>
+        <div class="placeholder-line placeholder-line--subtitle"></div>
+        <div class="placeholder-line placeholder-line--meta"></div>
+        <div class="placeholder-block"></div>
+      </div>
+
+      <div class="card-body" id="card-body" hidden>
       <section class="hero">
         <div class="hero-text">
-          <p class="common-name" id="display-name">Loading...</p>
-          <h1><i class="taxon-name" id="scientific-name">Plant profile</i><span class="taxon-authorship" id="scientific-authorship"></span></h1>
+          <p class="common-name" id="display-name"></p>
+          <h1><i class="taxon-name" id="scientific-name"></i><span class="taxon-authorship" id="scientific-authorship"></span></h1>
           <p class="status-line" id="status-line"></p>
         </div>
       </section>
@@ -561,6 +624,7 @@
         </section>
 
       </ot-tabs>
+      </div>
     </main>
 
     <script type="module" src="./src/plant-learning-card.ts"></script>

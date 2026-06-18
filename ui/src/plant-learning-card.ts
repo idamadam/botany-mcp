@@ -318,13 +318,21 @@ const attachSourceIcon = (
 };
 
 const renderScientificName = (profile: PlantLearningProfile) => {
-  text("scientific-name", profile.scientificName);
+  text("scientific-name", profile.scientificName, "");
 
   const fullName = profile.scientificNameWithAuthorship?.trim();
   const authorship = fullName?.startsWith(profile.scientificName)
     ? fullName.slice(profile.scientificName.length).trim()
     : "";
   text("scientific-authorship", authorship, "");
+};
+
+const setCardReady = (ready: boolean) => {
+  byId("card-placeholder").hidden = ready;
+  byId("card-body").hidden = !ready;
+  const shell = byId("app-shell");
+  shell.setAttribute("aria-busy", String(!ready));
+  shell.dataset.ready = String(ready);
 };
 
 const parseProfile = (result: ToolResult): PlantLearningProfile | undefined => {
@@ -637,6 +645,7 @@ const renderProfile = (profile: PlantLearningProfile) => {
   text("description", profile.recognition.description);
   text("similarity", profile.similarityNotes);
   renderSourceComparison(profile);
+  setCardReady(true);
 };
 
 app.ontoolresult = (result) => {
