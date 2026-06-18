@@ -121,6 +121,63 @@ export type GlossaryResult = {
   metadata: SourceMetadata;
 };
 
+export type PlantLearningProfile = {
+  query: {
+    name: string;
+    region: "VIC";
+  };
+  displayName: string;
+  scientificName: string;
+  scientificNameWithAuthorship?: string;
+  commonNames: string[];
+  heroImage?: {
+    url: string;
+    sourceUrl?: string;
+    caption?: string;
+    creator?: string;
+    license?: string;
+  };
+  recognition: {
+    summary?: string;
+    diagnosticFeatures?: string;
+    description?: string;
+  };
+  status: {
+    victorian?: string;
+    establishmentMeans?: string;
+    degreeOfEstablishment?: string;
+    nationalBiostatus?: string;
+    conservation?: string;
+  };
+  distribution?: {
+    victoria?: string;
+    national?: string;
+  };
+  habitat?: {
+    victoria?: string;
+    national?: string;
+  };
+  similarityNotes?: string;
+  sourceComparison: Array<{
+    source: string;
+    role: string;
+    present: boolean;
+    summary: string;
+  }>;
+  citations: Array<{
+    label: string;
+    source: string;
+    url?: string;
+  }>;
+  rawSources: {
+    vicflora?: PlantProfile;
+    alaTaxon?: unknown;
+    alaFloraProfile?: unknown;
+  };
+  metadata: SourceMetadata;
+  warnings: string[];
+};
+
 export interface BotanyProvider {
   searchTaxa(query: string, limit: number): Promise<PlantSearchResult>;
   getTaxonProfile(input: { taxonConceptId?: string; name?: string }): Promise<PlantProfile>;
