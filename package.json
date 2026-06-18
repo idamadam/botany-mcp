@@ -9,13 +9,17 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "dev:ui": "vite --host 127.0.0.1",
+    "dev:harness": "tsx harness/dev.ts",
+    "dev:harness:web": "vite --config harness/vite.config.ts --host 0.0.0.0",
     "start": "node dist/src/index.js",
     "build": "npm run build:ui && tsc -p tsconfig.json",
     "build:server": "tsc -p tsconfig.json",
     "build:ui": "vite build",
+    "build:ui:watch": "vite build --watch",
     "test": "vitest run",
+    "test:harness:e2e": "playwright test",
     "test:watch": "vitest",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p harness/tsconfig.json --noEmit"
   },
   "engines": {
     "node": ">=20.10"
@@ -31,6 +35,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.5",

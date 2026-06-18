@@ -55,6 +55,18 @@ http://127.0.0.1:5173/plant-learning-card.html?preview=1
 
 Preview mode uses bundled sample profile data so the tabs are clickable in a normal browser. In Claude or another MCP Apps host, the same UI uses the MCP Apps bridge and renders the `open_plant_learning_card` result for live data.
 
+### Chat context harness
+
+To iterate on the card inside a model-free conversation shell, run:
+
+```bash
+npm run dev:harness
+```
+
+Open `http://localhost:5174`. The harness provides authored user and assistant messages, fixture-backed tool results, light/dark and narrow/wide host controls, and developer traces around the real sandboxed MCP App. UI changes rebuild and remount the current card without clearing the conversation.
+
+Fixture mode is deterministic and does not require network access. Enable **Live MCP** in the toolbar to invoke the local server at `http://localhost:3000/mcp`. The original standalone preview remains available for isolated card work.
+
 The card UI uses vendored [Oat](https://oat.ink/) assets from `ui/vendor` for lightweight semantic controls, then Vite inlines them into the single MCP App HTML resource.
 
 Build the UI before running a production build:

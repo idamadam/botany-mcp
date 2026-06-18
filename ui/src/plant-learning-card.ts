@@ -182,7 +182,9 @@ const fallbackProfile = (name: string): PlantLearningProfile => ({
 
 const isPreviewMode = () =>
   new URLSearchParams(window.location.search).has("preview") ||
-  window.location.protocol === "http:" && ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  window.self === window.top &&
+    window.location.protocol === "http:" &&
+    ["localhost", "127.0.0.1"].includes(window.location.hostname);
 
 const createBridge = (): AppBridge => {
   if (!isPreviewMode()) {

@@ -25,7 +25,14 @@ export const createHttpApp = (provider: BotanyProvider) => {
   const transports: TransportMap = {};
 
   app.use(helmet());
-  app.use(cors({ origin: true, credentials: false }));
+  app.use(
+    cors({
+      origin: true,
+      credentials: false,
+      // Browser MCP clients must read session/protocol headers from initialize responses.
+      exposedHeaders: ["mcp-session-id", "mcp-protocol-version"]
+    })
+  );
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: false }));
 
